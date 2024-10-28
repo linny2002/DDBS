@@ -10,22 +10,33 @@ echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
 mkdir -p ./ddbs/1
 mkdir -p ./ddbs/2
 
-mkdir -p ./dfs/1
-mkdir -p ./dfs/2
-
 # Start the Docker Compose services in detached mode
 docker-compose up -d
 echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
 
-# Run your Python script
-python slice_data.py  # slice User, Article and Read Table
+# slice User, Article and Read Table
+python3 slice_table.py
 echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
-# sleep 5;
-# echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
-python3 import_data_to_mongo.py  # import User, Article and Read Table into DB container
+
+# import all the tables into DB container
+python3 import_data_to_mongo.py  
 echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
-# docker exec -it python-app bash -c "cd /usr/src/app/ && python3 ./generate_beread.py"
-# echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
-# docker exec -it python-app bash -c "cd /usr/src/app/ && python3 ./generate_popular_rank.py"
+
+# # upload all the texts, images and videos of every article to fastdfs
+# docker exec -it storage1 bash -c "cp /etc/fdfs/client.conf /etc/fdfs_buffer"
+# mv db-generation/articles/client.conf configs/client.conf
+# python3 upload_file_to_dfs.py
 # echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
 
+# upload all the texts, images and videos of every article to fastdfs
+docker cp upload_file_to_dfs.sh storage1:/etc/fdfs_buffer/
+docker exec -it storage1 bash -c "cd /etc/fdfs_buffer/ && bash ./upload_file_to_dfs.sh"
+echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
+cp db-generation/articles/mapping_records.jsonl ddbs/1/mapping_records.jsonl
+echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
+cp ddbs/1/mapping_records.jsonl ddbs/2/mapping_records.jsonl
+echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
+
+# import mapping records to DB container
+python3 import_map_to_mongo.py  
+echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0

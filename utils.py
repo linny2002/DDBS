@@ -24,3 +24,9 @@ def get_container_names(prefix):
         print("Error getting container names")
         return []
     return [name for name in result.stdout.splitlines() if name.startswith(prefix)]
+
+
+def import_data_to_mongo(container_name, db, collection, file_path):
+    subprocess.run(["docker", "exec", "-it", container_name, 
+                    "mongoimport", f"--db={db}", f"--collection={collection}", file_path])
+        

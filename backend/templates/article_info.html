@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ video.title }}</title>
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="" />
+<meta name="keywords" content="" />
+<link rel="icon" href="static/images/sv3.png">
+<link rel="stylesheet" type="text/css" href="static/css/animate.css">
+<link rel="stylesheet" type="text/css" href="static/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="static/css/fontello.css">
+<link rel="stylesheet" type="text/css" href="static/css/fontello-codes.css">
+<link rel="stylesheet" type="text/css" href="static/css/thumbs-embedded.css">
+<link rel="stylesheet" type="text/css" href="static/css/video-js.css">
+<link rel="stylesheet" type="text/css" href="static/css/style.css">
+<link rel="stylesheet" type="text/css" href="static/css/responsive.css">
+<link rel="stylesheet" type="text/css" href="static/css/color.css">
+
+</head>
+<body>
+
+<div class="wrapper">
+	
+	<header style="background-color:white; position: sticky; top: 0; z-index:100;">
+		<div class="top_bar">
+			<div class="container">
+				<div class="top_header_content">
+                    <div class="menu_logo">
+                        <a href="">
+                            <h3>HomePage</h3>
+                        </a>
+                    </div>
+					<div class="search_form">
+						<form action="http://127.0.0.1:8000/search/" method="get">
+							<input type="text" name="search" placeholder="Search Videos" maxlength="50">
+							<button type="submit">
+								<i class="icon-search"></i>
+							</button>
+						</form>
+					</div><!--search_form end-->
+					<div class="clearfix"></div>
+				</div><!--top_header_content end-->
+			</div>
+		</div><!--header_content end-->
+	</header><!--header end-->
+
+
+	<section class="mn-sec">
+		<div class="container">
+			<div class="row">
+				<div class="col-lg-9">
+					<div class="mn-vid-sc single_video">
+						<div class="vid-1">
+							<div class="vid-pr">
+                                <a href={{ video.url }} target="_blank">
+                                    <img src={{ vcoverpic }} alt={{ video.title }} width="640" height="264">
+                                </a>
+							</div><!--vid-pr end-->
+							<div class="vid-info">
+								<h3>{{ video.title }}</h3>
+								<div class="info-pr">
+									<span>{{ video.play }} 播放量 &nbsp &nbsp &nbsp</span>
+                                    <span>{{ video.dm }} </span>
+									<ul class="pr_links">
+										<li>
+{#											<button data-toggle="tooltip" data-placement="top" title="I like this">#}
+{#												<i class="icon-thumbs_up_fill"></i>#}
+{#											</button>#}
+											<span>点赞:{{ video.likes }}&nbsp &nbsp &nbsp</span>
+{#                                            <button data-toggle="tooltip" data-placement="top" title="Insert coins">#}
+{#												<img src="static/images/sv4.png" style="width: 20px;height: 30px">#}
+{#                                            </button>#}
+                                            <span>硬币:{{ video.coins }}&nbsp &nbsp &nbsp</span>
+                                            <span>收藏:{{ video.collects }}&nbsp &nbsp &nbsp</span>
+                                            <span>分享:{{ video.shares }}</span>
+										</li>
+									</ul>
+									<div class="clearfix"></div>
+								</div><!--info-pr end-->
+							</div><!--vid-info end-->
+						</div><!--vid-1 end-->
+						<div class="abt-mk">
+							<div class="info-pr-sec">
+								<div class="vcp_inf cr">
+									<div class="vc_hd">
+                                        <a href={{ video.up_href }} title="" target="_blank">
+                                            <img src={{ video.headportrait }} alt=""
+                                                 style="-webkit-border-radius: 100px;
+                                                        -moz-border-radius: 100px;
+                                                        -ms-border-radius: 100px;
+                                                        -o-border-radius: 100px;
+                                                        border-radius: 100px;
+                                                        width: 100%;">
+                                        </a>
+									</div>
+									<div class="vc_info pr">
+										<h4><a href={{ video.up_href }} title="" target="_blank">{{ video.upname }}</a></h4>
+										<span>Published on {{ video.uploadtime }}</span>
+									</div>
+								</div><!--vcp_inf end-->
+								<div class="clearfix"></div>
+							</div>
+							<div class="clearfix"></div>
+							<div class="about-ch-sec">
+								<div class="abt-rw">
+									<h4>视频简介 : </h4>
+									<p>{{ video.intro }}</p>
+								</div>
+							</div><!--about-ch-sec end-->
+						</div><!--abt-mk end-->
+						<div class="cmt-bx">
+							<ul class="cmt-pr">
+								<li> Comments</li>
+								<li></li>
+							</ul>
+							<div class="clearfix"></div>
+							<div class="clearfix"></div>
+							<ul class="cmn-lst">
+                                {% if video.reply1 %}
+								    <li>
+                                        <div class="pinned-comment">
+                                            <span><i class="icon-pinned"></i></span>
+                                        </div>
+                                        <p>{{ video.reply1 }}</p>
+								    </li>
+                                {% endif %}
+                                {% if video.reply2 %}
+								    <li>
+                                        <div class="pinned-comment">
+                                            <span><i class="icon-pinned"></i></span>
+                                        </div>
+                                        <p>{{ video.reply2 }}</p>
+								    </li>
+                                {% endif %}
+                                {% if video.reply3 %}
+								    <li>
+                                        <div class="pinned-comment">
+                                            <span><i class="icon-pinned"></i></span>
+                                        </div>
+                                        <p>{{ video.reply3 }}</p>
+								    </li>
+                                {% endif %}
+                                {% if video.reply4 %}
+								    <li>
+                                        <div class="pinned-comment">
+                                            <span><i class="icon-pinned"></i></span>
+                                        </div>
+                                        <p>{{ video.reply4 }}</p>
+								    </li>
+                                {% endif %}
+                                {% if video.reply5 %}
+								    <li>
+                                        <div class="pinned-comment">
+                                            <span><i class="icon-pinned"></i></span>
+                                        </div>
+                                        <p>{{ video.reply5 }}</p>
+								    </li>
+                                {% endif %}
+							</ul><!--comment list end-->
+						</div>
+					</div><!--mn-vid-sc end--->
+				</div><!---col-lg-9 end-->
+			</div>
+		</div>
+	</section><!--mn-sec end-->
+
+
+</div><!--wrapper end-->
+
+
+
+{#<script src="static/js/jquery.min.js"></script>#}
+<script src="static/js/popper.js"></script>
+<script src="static/js/bootstrap.min.js"></script>
+<script src="static/js/video.js"></script>
+<script src="static/js/script.js"></script>
+
+</body>
+</html>

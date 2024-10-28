@@ -1,26 +1,38 @@
 # insert the fragmented User, Article and Read tables into mongo databases
 import subprocess
-from util import get_container_names
+from utils import get_container_names, load_jsonl, import_data_to_mongo
+from pymongo import MongoClient
+from tqdm import tqdm
 
 
-def import_data_to_mongo(container_name):
-	# The path to our data within docker for both DB1 and DB2 is data_load
-	data_load_path = "/data_load"
-
-	subprocess.run(["docker", "exec", "-it", container_name, 
-                 "mongoimport", "--db=info", "--collection=user", f"{data_load_path}/user.jsonl"])
-	subprocess.run(["docker", "exec", "-it", container_name, 
-                 "mongoimport", "--db=info", "--collection=article", f"{data_load_path}/article.jsonl"])
-	subprocess.run(["docker", "exec", "-it", container_name, 
-                 "mongoimport", "--db=history", "--collection=read", f"{data_load_path}/read.jsonl"])
-    # TODO: import Be-Read and Popular-Rank jsonl file to mongo
-    # subprocess.run(["docker", "exec", "-it", container_name, 
-    #              "mongoimport", "--db=history", "--collection=be_read", f"{data_load_path}/be_read.jsonl"])
-    # subprocess.run(["docker", "exec", "-it", container_name, 
-    #              "mongoimport", "--db=history", "--collection=popular_rank", f"{data_load_path}/popular_rank.jsonl"])
+# clients = dict(
+#     db1 = [
+#         MongoClient(host="localhost", port=27001),
+#         # MongoClient(host="ddbs1_bak", port=27003),
+#     ],
+#     db2 = [
+#         MongoClient(host="localhost", port=27002),
+#         # MongoClient(host="ddbs2_bak", port=27004),
+#     ]
+#     )
 
 
 if __name__ == "__main__":
     mongo_containers = sorted(get_container_names(prefix="ddbs"), key=lambda x: len(x))
-    for container in mongo_containers:
-        import_data_to_mongo(container)
+    for container_name in mongo_containers:
+        # The path to our data within docker for both DB1 and DB2 is data_load
+        data_load_path = "/data_load"
+    
+        import_data_to_mongo(container_name, "info", "user", f"{data_load_path}/user.jsonl")
+        import_data_to_mongo(container_name, "info", "article", f"{data_load_path}/article.jsonl")
+        import_data_to_mongo(container_name, "history", "read", f"{data_load_path}/read.jsonl")
+        # TODO: import Be-Read and Popular-Rank jsonl file to mongo
+        # import_data_to_mongo(container_name, "history", "be_read", f"{data_load_path}/be_read.jsonl")
+        # import_data_to_mongo(container_name, "history", "popular_rank", f"{data_load_path}/popular_rank.jsonl")
+    
+    # # import data by pymongo
+    # for id in [1, 2]:
+    #     for client in tqdm(clients[f"db{id}"]):
+    #         client.info.user.insert_many(load_jsonl(f"ddbs/{id}/user.jsonl"))
+    #         client.info.article.insert_many(load_jsonl(f"ddbs/{id}/article.jsonl"))
+    #         client.info.read.insert_many(load_jsonl(f"ddbs/{id}/read.jsonl"))
