@@ -98,29 +98,29 @@
 
 		<section class="more_items_sec text-center">
 			<div class="container", style="font-size: 25px">
-                {% if pnum > 0 %}
+                {% if pid > 0 %}
                     <a href="{{ previouspage }}" title="">
                         <
                     </a>
                 {% endif %}
-                {% if ppnum > 1 %}
-{#                    {% if pnum > 1 %}#}
+                {% if ppid > 1 %}
+{#                    {% if pid > 1 %}#}
                         <a href="videopage/1" title="">
                             1
                         </a>
-                        {% if pppnum != 1 %}
+                        {% if pppid != 1 %}
                             ...
                         {% endif %}
 {#                    {% endif %}#}
                 {% endif %}
-                {% if ppnum > 0 %}
+                {% if ppid > 0 %}
                     <a href="{{ pppage }}" title="">
-                        {{ ppnum }}
+                        {{ ppid }}
                     </a>
                 {% endif %}
-                {% if pnum > 0 %}
+                {% if pid > 0 %}
                     <a href="{{ previouspage }}" title="">
-                        {{ pnum }}
+                        {{ pid }}
                     </a>
                 {% endif %}
                 <a title="" style="color: #8dd0ff">

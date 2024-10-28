@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Up Pages -Bilibili Search</title>
+<title>User Pages -Bilibili Search</title>
 <base href="/">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="" />
@@ -33,12 +33,12 @@
 					<div class="top_header_content">
 						<div class="menu_logo">
 							<a href="" title="" class="menu">
-                                <h3>Video Pages</h3>
+                                <h3>Article Pages</h3>
                             </a>
 						</div><!--menu_logo end-->
 						<div class="search_form">
-							<form action="http://127.0.0.1:8000/search/" method="get">
-								<input type="text" name="search" placeholder="Search Videos" maxlength="50">
+							<form action="http://localhost:9090/frontend/search/" method="get">
+								<input type="text" name="search" placeholder="Search users or articles" maxlength="50">
 								<button type="submit">
 									<i class="icon-search"></i>
 								</button>
@@ -66,29 +66,31 @@
 			<div class="vidz-row">
 				<div class="container">
 					<div class="vidz_sec">
-						<h3>250 Ups</h3>
+						<h3>All Users</h3>
 						<div class="vidz_list">
 							<div class="row">
-                                {% for up in ups %}
-                                    {% if forloop.counter < 41 %}
+                                {% for user in user_list %}
+                                    {% if loop.index <= item_per_page %}
 								<div class="col-lg-3 col-md-6 col-sm-6 col-6 full_wdth">
 									<div class="videoo">
 										<div class="vid_thumbainl" style="padding:0 30%">
-											<a href={{ up.up_href }} title="" target="_blank" style="height: 110px">
-												<div class="vc_hd" style="width:100%; height: 100%">
-                                                    <img src={{ up.headportrait }} alt=""
+											<a href="frontend/user/{{user.uid}}" title="" target="_blank" style="height: 110px">
+												<div class="vc_hd" style="width:100%; height: 100%;">
+                                                    <img src="static/images/kitten.jpg" alt=""
                                                         style="-webkit-border-radius: 100px;
                                                             -moz-border-radius: 100px;
                                                             -ms-border-radius: 100px;
                                                             -o-border-radius: 100px;
                                                             border-radius: 100px;
-                                                            width: 100%;">
+                                                            width: 100%;"
+                                                        onerror="this.onerror=null; this.style.backgroundColor='#8dd0ff'; this.src='';"
+                                                    >
 									            </div>
 											</a>	
 										</div><!--vid_thumbnail end-->
 										<div class="video_info">
-                                            <a href={{ up.up_href }} title="" target="_blank" style="width: 100%; display: inline-block; text-align: center">
-                                                {{ up.upname }}
+                                            <a href="frontend/user/{{user.uid}}" title="" target="_blank" style="width: 100%; display: inline-block; text-align: center">
+                                                {{ user.name }}
                                             </a>
                                         </div>
 									</div><!--videoo end-->
@@ -105,60 +107,60 @@
 
 		<section class="more_items_sec text-center">
 			<div class="container", style="font-size: 25px">
-                {% if pnum > 0 %}
+                {% if pageid > 1 %}
                     <a href="{{ previouspage }}" title="">
                         <
                     </a>
                 {% endif %}
-                {% if ppnum > 1 %}
-                    <a href="uppage/1" title="">
+                {% if pageid > 1 %}
+                    <a href="frontend/user_list/1" title="">
                         1
                     </a>
-                    {% if pppnum != 1 %}
+                    {% if pageid != 4 %}
                         ...
                     {% endif %}
                 {% endif %}
-                {% if ppnum > 0 %}
-                    <a href="{{ pppage }}" title="">
-                        {{ ppnum }}
+                {% if pageid > 2 %}
+                    <a href="frontend/user_list/{{ pageid - 2 }}" title="">
+                        {{ pageid - 2 }}
                     </a>
                 {% endif %}
-                {% if pnum > 0 %}
-                    <a href="{{ previouspage }}" title="">
-                        {{ pnum }}
+                {% if pageid > 1 %}
+                    <a href="frontend/user_list/{{ pageid - 1 }}" title="">
+                        {{ pageid - 1 }}
                     </a>
                 {% endif %}
                 <a title="" style="color: #8dd0ff">
-                    {{ num }}
+                    {{ pageid }}
 				</a>
-                {% if nnum <= 7 %}
-                    <a href="{{ nextpage }}" title="">
-                        {{ nnum }}
+                {% if pageid <= total_page_num - 1 %}
+                    <a href="frontend/user_list/{{ pageid + 1 }}" title="">
+                        {{ pageid + 1 }}
                     </a>
                 {% endif %}
-                {% if nnnum <= 7 %}
-                    <a href="{{ nnpage }}" title="">
-                        {{ nnnum }}
+                {% if pageid < total_page_num - 1 %}
+                    <a href="frontend/user_list/{{ pageid + 2 }}" title="">
+                        {{ pageid + 2 }}
                     </a>
                 {% endif %}
-                {% if nnnum < 7 %}
-                    {% if nnnnum != 7 %}
+                {% if pageid < total_page_num - 2 %}
+                    {% if pageid != total_page_num - 3 %}
                         ...
                     {% endif %}
-                    <a href="uppage/7 " title="">
-                        7
+                    <a href="frontend/user_list/{{total_page_num}}" title="">
+                        {{total_page_num}}
                     </a>
                 {% endif %}
-                {% if nnum <= 7 %}
-                    <a href="{{ nextpage }}" title="">
+                {% if pageid < total_page_num %}
+                    <a href="frontend/user_list/{{ pageid + 1 }}" title="">
                         >
                     </a>
                 {% endif %}
                 <br>
                 <span style="font-size: 20px">
-                    <form action="http://127.0.0.1:8000/uppage/" method="get">
+                    <form action="frontend/user_list/" method="get">
                         跳至
-                        <input type="number" name="uppage" placeholder="" style="width: 45px;height: 30px" min="1" max="7">
+                        <input type="number" name="pageid" placeholder="" style="width: 45px;height: 30px" min="1" max="{{total_page_num}}">
                         页
                     </form>
                 </span>
