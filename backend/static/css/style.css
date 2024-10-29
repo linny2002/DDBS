@@ -3937,8 +3937,6 @@ header.hp_1 .side_links li.user_contrl {
 /* ======================= BANNER SECTION ========================= */
 .banner-section {
 	/*background-image: url(../images/resources/banner-img.jpg);*/
-	background-image: url(psc.jpg);
-	/*background-image: url(D://djangoProject3/static/images/resources/psc.jpg);*/
 	background-repeat: no-repeat;
 	background-size: cover;
 	padding: 200px 0;

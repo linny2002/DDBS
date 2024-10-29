@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template
 import requests
 from pymongo import MongoClient
+import time
 
 
 clients = dict(
@@ -45,19 +46,20 @@ if db2_article_count % ITEM_PER_PAGE != 0:
 # text, image and video files of an article is stored in the dfs
 def find_file_path(file_name):
     for client in sum(list(clients.values()), []):
-        try:
+        # try:
             res = client.mapping.article.find_one({"name": file_name})
             return res["path"]
-        except:
-            pass
+        # except:
+        #     pass
     return None
 
 
 def user_by_id(uid):
-    for client in sum(list(clients.values()),[]):
+    for client in sum(list(clients.values()), []):
         try:
             user = client.info.user.find_one({"uid": uid})
-            return user
+            if user:
+                return user
         except:
             pass
     return {"message": f"User {uid} not found."}
@@ -65,27 +67,25 @@ def user_by_id(uid):
 
 def article_by_id(aid):
     for client in clients["db2"]:
-        try:
+        # try:
             article = client.info.article.find_one({"aid": aid})
             text_file = article["text"]
-            text_path = find_file_path(text_file).replace("0.0.0.0", "nginx").strip()
+            text_path = find_file_path(text_file).strip()
             text = requests.get(text_path).text
-            images = [find_file_path(i).replace("0.0.0.0", "localhost").strip() for i in article["image"].split(",") if i.strip()]
-            videos = [find_file_path(i).replace("0.0.0.0", "localhost").strip() for i in article["video"].split(",") if i.strip()]
-            ret = {
-                "text": text, 
-                "images": images, 
-                "videos": videos,
-            }
+            images = [find_file_path(i).strip() for i in article["image"].split(",") if i.strip()]
+            videos = [find_file_path(i).strip() for i in article["video"].split(",") if i.strip()]
+            article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
+            del article["_id"], article["timestamp"], article["text"], article["image"], article["video"]
+            ret = dict(text=text, images=images, videos=videos, **article)
             return ret
-        except:
-            pass
+        # except:
+        #     pass
         
 
 def find_user_read_list(uid):
-    for client in sum(list(clients.values()),[]):
+    for client in sum(list(clients.values()), []):
         try:
-            history = list(client.history.read.find(dict(uid=uid)))
+            history = list(client.history.read.find({"uid": uid}))
             if history:
                 return history
         except:
@@ -169,17 +169,28 @@ def get_search_results(search_text: str):
 
 @app.route("/frontend/article/<aid>")
 def get_article(aid: str):
-    return render_template("article_info.html", aid=aid, **article_by_id(aid))
+    return render_template("article_info.html", article=article_by_id(aid))
 
 
 @app.route("/frontend/user/<uid>")
 def get_user(uid: str):
     user = user_by_id(uid)
     reading_list = find_user_read_list(uid)
-    reading_list = [dict(text=article_by_id(i["aid"])["text"], **i) for i in reading_list]
+    tmp_list = []
+    for read in reading_list:
+        # for client in clients["db2"]:
+        #     # try:
+        #         article = client.info.article.find_one({"aid": read["aid"]})
+        #     # except:
+        #     #     pass
+        article = article_by_id(read["aid"])
+        read["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(read["timestamp"])))
+        del article["date"], article["id"], article["aid"], read["_id"], read["id"], read["timestamp"]
+        tmp_list.append(dict(**article, **read))
+    reading_list = tmp_list
+    # print(reading_list)
     for i in range(len(reading_list)):
-        reading_list[i]["location"] = f"/frontend/article/{reading_list[i]['aid']}"
-        del reading_list[i]["_id"]
+        reading_list[i]["url"] = f"/frontend/article/{reading_list[i]['aid']}"
     return render_template("user_info.html", user=user, reading_list=reading_list)
 
 

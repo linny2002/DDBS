@@ -61,7 +61,7 @@ services:
     volumes:
       - ${PWD}/db-generation/articles:/etc/fdfs_buffer/
       # - ${PWD}/configs/storage1.conf:/etc/fdfs/storage.conf
-      # - ${PWD}/configs/storage_nginx.conf:/usr/local/nginx/conf/nginx.conf
+      - ${PWD}/configs/storage_nginx.conf:/usr/local/nginx/conf/nginx.conf
     depends_on:
       - tracker
     networks:
@@ -71,12 +71,12 @@ services:
       - "23000:23000"
     command: "storage"
 
-  nginx:
-    image: nginx:latest
-    container_name: nginx
-    ports:
-      - "9090:9090"
-    volumes:
-      - ${PWD}/configs/nginx.conf:/etc/nginx/conf.d/default.conf
-    networks:
-      - ddbs_network
+  # nginx:
+  #   image: nginx:latest
+  #   container_name: nginx
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ${PWD}/configs/nginx.conf:/etc/nginx/conf.d/default.conf
+  #   networks:
+  #     - ddbs_network

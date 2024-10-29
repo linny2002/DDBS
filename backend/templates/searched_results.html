@@ -38,7 +38,7 @@
                             </a>
 						</div><!--menu_logo end-->
 						<div class="search_form">
-							<form action="http://127.0.0.1:8000/search/" method="get">
+							<form action="http://localhost:8000/search/" method="get">
 								<input type="text" name="search" placeholder="Search Videos" maxlength="50" value={{ last_search_text }}>
 								<button type="submit">
 									<i class="icon-search"></i>
@@ -174,7 +174,7 @@
                 {% endif %}
                 <br>
                 <span style="font-size: 20px">
-                    <form action="http://127.0.0.1:8000/searchpage/" method="get">
+                    <form action="http://localhost:8000/searchpage/" method="get">
                         跳至
                         <input type="number" name="searchpage" placeholder="" style="width: 45px;height: 30px" min="1" max={{ pages }}>
                         页

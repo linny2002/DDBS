@@ -7,7 +7,7 @@ BASE_DIR="/etc/fdfs_buffer"
 FDFS_CLIENT_CONF="/etc/fdfs/client.conf"
 
 # Base URL for accessing files from FastDFS storage
-STORAGE_BASE_URL="http://0.0.0.0:9090"
+STORAGE_BASE_URL="http://localhost:8888"
 
 # Output file for mapping results
 MAPPING_FILE="/etc/fdfs_buffer/mapping_records.jsonl"
@@ -22,7 +22,7 @@ upload_file() {
     # if result code is 0, upload is successful
     if [ $result -eq 0 ]; then
         local file_url="${STORAGE_BASE_URL}/${file_id}"
-        echo "{\"$file_name\": \"$file_url\"}" >> $MAPPING_FILE
+        echo "{\"name\": \"$file_name\", \"path\": \"$file_url\"}" >> $MAPPING_FILE
     else
         echo "Error uploading file: $file_name" >> $MAPPING_FILE
     fi

@@ -1,5 +1,4 @@
 # insert the fragmented User, Article and Read tables into mongo databases
-import subprocess
 from utils import get_container_names, load_jsonl, import_data_to_mongo
 from pymongo import MongoClient
 from tqdm import tqdm
