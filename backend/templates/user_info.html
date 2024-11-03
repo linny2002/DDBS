@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>{{ user.upname }}'s Channel</title>
+<title>{{ user.name }}'s Channel</title>
 <base href="/">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="" />
@@ -10,12 +10,18 @@
 <link rel="icon" href="static/images/sv2.png">
 <link rel="stylesheet" type="text/css" href="static/css/animate.css">
 <link rel="stylesheet" type="text/css" href="static/css/bootstrap.min.css">
-<link rel="stylesheet" type="text/css" href="static/css/fontello.css">
-<link rel="stylesheet" type="text/css" href="static/css/fontello-codes.css">
-<link rel="stylesheet" type="text/css" href="static/css/thumbs-embedded.css">
+<!-- <link rel="stylesheet" type="text/css" href="static/css/fontello.css"> -->
+<!-- <link rel="stylesheet" type="text/css" href="static/css/fontello-codes.css"> -->
+<!-- <link rel="stylesheet" type="text/css" href="static/css/thumbs-embedded.css"> -->
 <link rel="stylesheet" type="text/css" href="static/css/style.css">
 <link rel="stylesheet" type="text/css" href="static/css/responsive.css">
 <link rel="stylesheet" type="text/css" href="static/css/color.css">
+
+<!-- <link rel="stylesheet" type="text/css" href="static/css/animation.css"> -->
+<link rel="stylesheet" type="text/css" href="static/css/92204602.css">
+<link rel="stylesheet" type="text/css" href="static/css/92204602-ie7-codes.css">
+<link rel="stylesheet" type="text/css" href="static/css/92204602-ie7.css">
+<link rel="stylesheet" type="text/css" href="static/css/92204602-embedded.css">
 </head>
 <body>
 
@@ -59,23 +65,51 @@
 					</span>
 					<div class="vc_info pr">
 						<h4>{{ user.name }}</h4>
-						<span>{{ user.gender }}</span>
+						{% if user.gender == "male" %}
+							<i class="icon-mars"></i>
+						{% elif user.gender == "female" %}
+							<i class="icon-venus"></i>
+						{% endif %}
                         <br>
-						<span>{{ user.email }}</span>
+						<span>
+							<i class="icon-mail"></i>
+							{{ user.email }}
+						</span>
+						&nbsp;
+						<span>
+							<i class="icon-phone"></i>
+							{{ user.phone }}
+						</span>
+						&nbsp;
+						<span>
+							<i class="icon-language"></i> 
+							{{ user.language }}
+						</span>
+                        &nbsp;
+						<span>
+							<i class="icon-paper-plane"></i> 
+							{{ user.region }}
+						</span>
                         <br>
-						<span>{{ user.phone }}</span>
+						<span>
+							<span style="font-weight: bold;">Grade: </span>
+							{{ user.grade }}
+						</span>
                         <br>
-						<span>Grade: {{ user.grade }}</span>
+						<span>
+							<span style="font-weight: bold;">Role: </span>
+							{{ user.role }}
+						</span>
                         <br>
-						<span>Language: {{ user.language }}</span>
+						<span>
+							<span style="font-weight: bold;">Prefer Tags: </span>
+							{{ user.preferTags }}
+						</span>
                         <br>
-						<span>Region: {{ user.region }}</span>
-                        <br>
-						<span>Role: {{ user.role }}</span>
-                        <br>
-						<span>Prefer Tags{{ user.preferTags }}</span>
-                        <br>
-                        <span>Obtained Credits: {{ user.obtainedCredits }}</span>
+                        <span>
+							<span style="font-weight: bold;">Obtained Credits: </span>
+							{{ user.obtainedCredits }}
+						</span>
 					</div>
 				</div><!--vcp_inf end-->
 				<div class="clearfix"></div>
@@ -95,26 +129,25 @@
 										<div class="videoo">
 											<div class="vid_thumbainl">
 												<a href="frontend/article/{{read.aid}}" title="" target="_blank">
-													<img src={{ read.images[0] }} alt="">
-													<!-- <span class="watch_later">
-														<i class="icon-watch_later_fill"></i>
-													</span> -->
+													<img src={{ read.images[0] }} alt="" style="aspect-ratio: 16/9; overflow: hidden;">
 												</a>	
 											</div><!--vid_thumbnail end-->
 											<div class="video_info">
 												<h3><a href="frontend/article/{{read.aid}}" title="" target="_blank">{{ read.title }}</a></h3>
-												<small class="posted_dt"> Read at {{ read.date }}</small>
+												<small class="posted_dt"> 
+													<i class="icon-clock"></i>
+													{{ read.date }}
+												</small><br>
 												<!-- <span>Abstract: {{ read.abstract }} &nbsp</span> -->
-												<span>Comment: {{ read.commentDetail }} &nbsp</span>
-												{% if read.agreeOrNot == 1 %}
-													<span class="watch_later">
-														<i class="icon-liked"></i>
-													</span>
+												{% if read.commentOrNot == "1" %}
+													<i class="icon-quote-left"></i>
+													<span>{{ read.commentDetail }}</span><br>
 												{% endif %}
-												{% if read.shareOrNot == 1 %}
-													<span class="watch_later">
-														<i class="icon-shared"></i>
-													</span>
+												{% if read.agreeOrNot == "1" %}
+													<i class="icon-thumbs-up-alt"></i>
+												{% endif %}
+												{% if read.shareOrNot == "1" %}
+													<i class="icon-share"></i>
 												{% endif %}
 											</div>
 										</div><!--videoo end-->
