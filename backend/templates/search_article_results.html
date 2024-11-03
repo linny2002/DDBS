@@ -1,8 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Video Pages</title>
+<title>"{{ last_search_text }}" Search Results</title>
 <base href="/">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="" />
@@ -32,13 +33,13 @@
 				<div class="container">
 					<div class="top_header_content">
 						<div class="menu_logo">
-							<a href="frontend/user_list/1" title="" class="menu">
-                                <h3>User Pages</h3>
+							<a href="frontend/article_list/1" title="" class="menu">
+                                <h3>HomePage</h3>
                             </a>
 						</div><!--menu_logo end-->
 						<div class="search_form">
-                            <form id="searchForm" onsubmit="redirectToSearch(event)">
-                                <input type="text" id="searchInput" name="search" placeholder="Search articles" minlength="1" maxlength="50">
+							<form id="searchForm" onsubmit="redirectToSearch(event)">
+                                <input type="text" id="searchInput" name="search_text" placeholder="Search articles" minlength="1" maxlength="50" value={{last_search_text}}>
                                 <button type="submit">
                                     <i class="icon-search"></i>
                                 </button>
@@ -48,28 +49,30 @@
 					</div><!--top_header_content end-->
 				</div>
 			</div><!--header_content end-->
+
 		</header><!--header end-->
 
-
-		<section class="banner-section" style="background-image: url(static/images/psc.jpg);">
-			<div class="container">
-				<div class="banner-text">
-					<h2>Read articles, share with friends</h2>
-					<a href="#" title="">Start</a>
-				</div><!--banner-text end-->
-				<h3 class="headline">Articles of the Day by <a href="#" title="">Lin Nianyi</a> and <a href="#" title="">Rosalie Butte</a></h3>
-			</div>
-		</section><!--banner-section end-->
-
-
 		<section class="vds-main">
+            <div class="btm_bar">
+				<div class="container" style="margin:0 2%;">
+					<div class="btm_bar_content">
+						<nav>
+							<ul>
+								<li>
+                                    <h3>Find {{ total_article_num }} Articles</h3>
+                                    <!-- Cost {{ timecost }} seconds -->
+								</li>
+							</ul>
+						</nav><!--navigation end-->
+						<div class="clearfix"></div>
+					</div><!--btm_bar_content end-->
+				</div>
+			</div><!--btm_bar end-->
 			<div class="vidz-row">
 				<div class="container">
-					<div class="vidz_sec">
-						<h3>All Articles</h3>
-						<div class="vidz_list">
-							<div class="row">
-                                {% for article in article_list %}
+					<div class="vidz_list m-0">
+						<div class="row">
+                            {% for article in article_list %}
                                     {% if loop.index <= item_per_page %}
 								<div class="col-lg-3 col-md-6 col-sm-6 col-6 full_wdth">
 									<div class="videoo">
@@ -85,25 +88,23 @@
 										</div>
 									</div><!--videoo end-->
 								</div>
-                                    {% endif %}
-                                {% endfor %}
-							</div>
-						</div><!--vidz_list end-->
-					</div><!--vidz_videos end-->
+                                {% endif %}
+                            {% endfor %}
+						</div>
+					</div><!--vidz_list end-->
 				</div>
 			</div><!--vidz-row end-->
-
 		</section><!--vds-main end-->
 
-		<section class="more_items_sec text-center">
-			<div class="container", style="font-size: 25px">
+		<section class="more_items_sec mgt-50 text-center">
+            <div class="container", style="font-size: 25px">
                 {% if pageid > 1 %}
-                    <a href="frontend/article_list/{{pageid - 1}}" title="">
+                    <a href="frontend/search_article/{{last_search_text}}/{{pageid - 1}}" title="">
                         <
                     </a>
                 {% endif %}
                 {% if pageid > 3 %}
-                    <a href="frontend/article_list/1" title="">
+                    <a href="frontend/search_article/{{last_search_text}}/1" title="">
                         1
                     </a>
                     {% if pageid != 4 %}
@@ -111,12 +112,12 @@
                     {% endif %}
                 {% endif %}
                 {% if pageid > 2 %}
-                    <a href="frontend/article_list/{{ pageid - 2 }}" title="">
+                    <a href="frontend/search_article/{{last_search_text}}/{{ pageid - 2 }}" title="">
                         {{ pageid - 2 }}
                     </a>
                 {% endif %}
                 {% if pageid > 1 %}
-                    <a href="frontend/article_list/{{ pageid - 1 }}" title="">
+                    <a href="frontend/search_article/{{last_search_text}}/{{ pageid - 1 }}" title="">
                         {{ pageid - 1 }}
                     </a>
                 {% endif %}
@@ -124,12 +125,12 @@
                     {{ pageid }}
 				</a>
                 {% if pageid <= total_page_num - 1 %}
-                    <a href="frontend/article_list/{{ pageid + 1 }}" title="">
+                    <a href="frontend/search_article/{{last_search_text}}/{{ pageid + 1 }}" title="">
                         {{ pageid + 1 }}
                     </a>
                 {% endif %}
                 {% if pageid < total_page_num - 1 %}
-                    <a href="frontend/article_list/{{ pageid + 2 }}" title="">
+                    <a href="frontend/search_article/{{last_search_text}}/{{ pageid + 2 }}" title="">
                         {{ pageid + 2 }}
                     </a>
                 {% endif %}
@@ -137,20 +138,22 @@
                     {% if pageid != total_page_num - 3 %}
                         ...
                     {% endif %}
-                    <a href="frontend/article_list/{{total_page_num}}" title="">
+                    <a href="frontend/search_article/{{last_search_text}}/{{total_page_num}}" title="">
                         {{total_page_num}}
                     </a>
                 {% endif %}
                 {% if pageid < total_page_num %}
-                    <a href="frontend/article_list/{{ pageid + 1 }}" title="">
+                    <a href="frontend/search_article/{{last_search_text}}/{{ pageid + 1 }}" title="">
                         >
                     </a>
                 {% endif %}
                 <br>
                 <span style="font-size: 20px">
-                    <form action="frontend/article_list/" method="get">
+                    <!-- <form id="jumpForm" onsubmit="redirectToJump(event, last_search_text)"> -->
+                    <form action="frontend/search_article/" method="get">
                         Jump to page
-                        <input type="number" name="pageid" placeholder="" style="width: 45px;height: 30px" min="1" max="{{total_page_num}}">
+                        <input type="number" id="pageid" name="pageid" placeholder="" style="width: 45px;height: 30px" min="1" max="{{total_page_num}}">
+                        <input type="hidden" name="search_text" value={{last_search_text}}>
                     </form>
                 </span>
 			</div>
@@ -162,10 +165,10 @@
 
 
 {#<script src="static/js/jquery.min.js"></script>#}
-{#<script src="static/js/popper.js"></script>#}
-{#<script src="static/js/bootstrap.min.js"></script>#}
-{#<script src="static/js/flatpickr.js"></script>#}
-{#<script src="static/js/script.js"></script>#}
+<!-- <script src="static/js/popper.js"></script>
+<script src="static/js/bootstrap.min.js"></script>
+<script src="static/js/flatpickr.js"></script>
+<script src="static/js/script.js"></script> -->
 
 
 
@@ -182,12 +185,31 @@
         if (searchText) {
             // 构建目标 URL，默认页面 ID 为 1
             const pageid = 1; // 可以根据需求设置初始页面 ID
-            const targetUrl = `/frontend/search_article/${encodeURIComponent(searchText)}/${pageid}`;
+            const targetUrl = `/frontend/search_article/${last_search_text}/${pageid}`;
     
             // 重定向到生成的 URL
             window.location.href = targetUrl;
         } else {
-            alert("请输入搜索内容"); // 提示用户输入内容
+            alert("Please enter your search content!"); // 提示用户输入内容
+        }
+    }
+    function redirectToJump(event, last_search_text) {
+        event.preventDefault(); // 阻止默认表单提交行为
+        console.log("Last Search Text:", last_search_text);
+        
+        // 获取输入的搜索文本
+        const pageid = document.getElementById("pageid").value;
+        console.log("pageid:", pageid);
+        
+        // 检查是否有输入内容
+        if (pageid) {
+            // 构建目标 URL，默认页面 ID 为 1
+            const targetUrl = `/frontend/search_article/${last_search_text}/${pageid}`;
+    
+            // 重定向到生成的 URL
+            window.location.href = targetUrl;
+        } else {
+            alert("Please enter page number!"); // 提示用户输入内容
         }
     }
 </script>

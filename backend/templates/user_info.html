@@ -33,13 +33,13 @@
 			<div class="container">
 				<div class="top_header_content">
 					<div class="menu_logo">
-                        <a href="">
+                        <a href="frontend/user_list/1">
                             <h3>HomePage</h3>
                         </a>
                     </div><!--menu_logo end-->
 					<div class="search_form">
-						<form action="http://localhost:8000/search/" method="get">
-							<input type="text" name="search" placeholder="Search Videos" maxlength="50">
+						<form action="http://localhost:8080/frontend/search_user/" method="get">
+							<input type="text" name="search_text" placeholder="Search users" minlength="1" maxlength="50">
 							<button type="submit">
 								<i class="icon-search"></i>
 							</button>
@@ -92,6 +92,11 @@
 						</span>
                         <br>
 						<span>
+							<span style="font-weight: bold;">Dept: </span>
+							{{ user.dept }}
+						</span>
+                        <br>
+						<span>
 							<span style="font-weight: bold;">Grade: </span>
 							{{ user.grade }}
 						</span>
@@ -129,7 +134,7 @@
 										<div class="videoo">
 											<div class="vid_thumbainl">
 												<a href="frontend/article/{{read.aid}}" title="" target="_blank">
-													<img src={{ read.images[0] }} alt="" style="aspect-ratio: 16/9; overflow: hidden;">
+													<img src={{ read.cover }} alt="" style="aspect-ratio: 16/9; overflow: hidden;">
 												</a>	
 											</div><!--vid_thumbnail end-->
 											<div class="video_info">

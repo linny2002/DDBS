@@ -28,13 +28,13 @@
 			<div class="container">
 				<div class="top_header_content">
                     <div class="menu_logo">
-                        <a href="">
+                        <a href="frontend/article_list/1">
                             <h3>HomePage</h3>
                         </a>
                     </div>
 					<div class="search_form">
-						<form action="http://localhost:8000/search/" method="get">
-							<input type="text" name="search" placeholder="Search Videos" maxlength="50">
+						<form action="http://localhost:8080/frontend/search_article/" method="get">
+							<input type="text" name="search_text" placeholder="Search articles" minlength="1" maxlength="50">
 							<button type="submit">
 								<i class="icon-search"></i>
 							</button>
@@ -60,24 +60,35 @@
                                     <span>Comments: {{ comment_num }} </span>
 									<ul class="pr_links">
 										<li>
-{#											<button data-toggle="tooltip" data-placement="top" title="I like this">#}
-{#												<i class="icon-thumbs_up_fill"></i>#}
-{#											</button>#}
 											<span>Likes: {{ likes }}&nbsp &nbsp &nbsp</span>
-{#                                            <button data-toggle="tooltip" data-placement="top" title="Insert coins">#}
-{#												<img src="static/images/sv4.png" style="width: 20px;height: 30px">#}
-{#                                            </button>#}
                                             <span>Shares: {{ shares }}</span>
 										</li>
 									</ul>
 									<div class="clearfix"></div>
 								</div><!--info-pr end-->
 							</div><!--vid-info end-->
-							<div class="vid-pr">
+							<div class="abt-mk">
+								<div class="info-pr-sec">
+									<div class="vcp_inf cr" style="width: 100%;">
+										<div class="vc_info pr">
+											<!-- <h4><a href={{ up_href }} title="" target="_blank">{{ name }}</a></h4> -->
+											<span>Published on {{ date }}</span>
+										</div>
+									</div><!--vcp_inf end-->
+									<div class="clearfix"></div>
+								</div>
+								<div class="clearfix"></div>
+								<div class="about-ch-sec">
+									<div class="abt-rw">
+										<h4>Abstract: </h4>
+										<p>{{ abstract }}</p>
+									</div>
+								</div><!--about-ch-sec end-->
+							</div><!--abt-mk end-->
+							<div class="vid-pr" style="padding: 5%; height: auto;">
 								{{ text }}
-								<!-- <img src={{ vcoverpic }} alt={{ title }} width="640" height="264"> -->
 								{% for image in images  %}
-									<img src={{ image }}>
+									<img src={{ image }} style="margin: 1% 0 1% 0;">
 								{% endfor %}
 								{% for video in videos  %}
 									<video width="640" height="360" controls>
@@ -87,24 +98,6 @@
 								{% endfor %}
 							</div><!--vid-pr end-->
 						</div><!--vid-1 end-->
-						<div class="abt-mk">
-							<div class="info-pr-sec">
-								<div class="vcp_inf cr" style="width: 100%;">
-									<div class="vc_info pr">
-										<!-- <h4><a href={{ up_href }} title="" target="_blank">{{ name }}</a></h4> -->
-										<span>Published on {{ date }}</span>
-									</div>
-								</div><!--vcp_inf end-->
-								<div class="clearfix"></div>
-							</div>
-							<div class="clearfix"></div>
-							<div class="about-ch-sec">
-								<div class="abt-rw">
-									<h4>Abstract: </h4>
-									<p>{{ abstract }}</p>
-								</div>
-							</div><!--about-ch-sec end-->
-						</div><!--abt-mk end-->
 						<div class="cmt-bx">
 							<ul class="cmt-pr">
 								<li> Comments</li>

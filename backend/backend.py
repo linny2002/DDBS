@@ -21,11 +21,13 @@ db1_user_count, db2_user_count = 0, 0
 for client in clients["db1"]:
     try:
         db1_user_count = client.info.user.count_documents({})
+        break
     except:
         pass
 for client in clients["db2"]:
     try:
         db2_user_count = client.info.user.count_documents({})
+        break
     except:
         pass
 user_list_page_num = (db1_user_count + db2_user_count) // ITEM_PER_PAGE
@@ -36,6 +38,7 @@ db2_article_count = 0
 for client in clients["db2"]:
     try:
         db2_article_count = client.info.article.count_documents({})
+        break
     except:
         pass
 article_list_page_num = db2_article_count // ITEM_PER_PAGE
@@ -112,6 +115,7 @@ def user_list_page(pageid: int):
             # try:
                 res = client.info.user.find().skip(skipnum).limit(ITEM_PER_PAGE)
                 user_list = list(res)
+                break
             # except:
             #     pass
     elif le > db1_user_count:
@@ -120,6 +124,7 @@ def user_list_page(pageid: int):
             # try:
                 res = client.info.user.find().skip(skipnum).limit(ITEM_PER_PAGE)
                 user_list = list(res)
+                break
             # except:
             #     pass
     else:  # le <= db1_user_count < ri
@@ -129,12 +134,14 @@ def user_list_page(pageid: int):
             # try:
                 res = client.info.user.find().skip(skipnum)
                 user_list = list(res)
+                break
             # except:
             #     pass
         for client in clients["db2"]:
             # try:
                 res = client.info.user.find().limit(ri - db1_user_count)
                 user_list.extend(list(res))
+                break
             # except:
             #     pass
     return render_template("user_list.html", pageid=pageid, user_list=user_list, item_per_page=ITEM_PER_PAGE, total_page_num=user_list_page_num)
@@ -156,20 +163,123 @@ def article_list_page(pageid: int):
         # try:  # in case one of the db brokedown
             res = client.info.article.find().skip((pageid - 1) * ITEM_PER_PAGE).limit(ITEM_PER_PAGE)
             article_list = list(res)
+            for article in article_list:
+                article["cover"] = find_file_path(article["image"].split(",")[0])
+                article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
+                del article["_id"]
+            break
         # except:
         #     pass
     return render_template("article_list.html", pageid=pageid, article_list=article_list, item_per_page=ITEM_PER_PAGE, total_page_num=article_list_page_num)
 
 
-@app.route("/frontend/search/<search_text>")
-def get_search_results(search_text: str):
+@app.route("/frontend/search_user/", methods=["GET"])
+def get_search_user_results():
+    pageid = request.args.get("pageid")
+    if not pageid: 
+        pageid = 1
+    search_text = request.args.get("search_text")
+    return search_user_results(search_text, pageid)
     
-    return render_template("searched_results.html")
+    
+@app.route("/frontend/search_user/<search_text>/<pageid>")
+def search_user_results(search_text: str, pageid: str):
+    pageid = int(pageid)
+    fields = ["uid", "email", "phone"]  # 需要搜索的字段
+    query = {
+        "$or": [
+            {field: {"$regex": search_text, "$options": "i"}}
+            for field in fields
+        ]
+    }
+    searched_user_num = {
+        "db1": 0,
+        "db2": 0
+    }
+    user_list = []
+    for client_name in ["db1", "db2"]:
+        for client in clients[client_name]:
+            # try:
+                searched_user_num[client_name] = client.info.user.count_documents(query)
+                break
+    le, ri = (pageid - 1) * ITEM_PER_PAGE + 1, pageid * ITEM_PER_PAGE
+    if ri <= searched_user_num["db1"]:
+        skipnum = le - 1
+        for client in clients["db1"]:
+            # try:
+                res = client.info.user.find(query).skip(skipnum).limit(ITEM_PER_PAGE)
+                user_list = list(res)
+                break
+            # except:
+            #     pass
+    elif le > searched_user_num["db1"]:
+        skipnum = le - 1 - searched_user_num["db1"]
+        for client in clients["db2"]:
+            # try:
+                res = client.info.user.find(query).skip(skipnum).limit(ITEM_PER_PAGE)
+                user_list = list(res)
+                break
+            # except:
+            #     pass
+    else:  # le <= db1_user_count < ri
+        skipnum = le - 1
+        user_list = []
+        for client in clients["db1"]:
+            # try:
+                res = client.info.user.find(query).skip(skipnum)
+                user_list = list(res)
+                break
+            # except:
+            #     pass
+        for client in clients["db2"]:
+            # try:
+                res = client.info.user.find(query).limit(ri - searched_user_num["db1"])
+                user_list.extend(list(res))
+                break
+            # except:
+            #     pass
+    total_user_num = searched_user_num["db1"] + searched_user_num["db2"]
+    total_page_num = total_user_num // ITEM_PER_PAGE + 1
+    return render_template("search_user_results.html", pageid=pageid, user_list=user_list, item_per_page=ITEM_PER_PAGE, total_page_num=total_page_num, last_search_text=search_text, total_user_num=total_user_num)
+
+
+@app.route("/frontend/search_article/", methods=["GET"])
+def get_search_article_results():
+    pageid = request.args.get("pageid")
+    if not pageid: 
+        pageid = 1
+    search_text = request.args.get("search_text")
+    return search_article_results(search_text, pageid)
+    
+    
+@app.route("/frontend/search_article/<search_text>/<pageid>")
+def search_article_results(search_text: str, pageid: str):
+    pageid = int(pageid)
+    fields = ["title", "aid"]  # 需要搜索的字段
+    query = {
+        "$or": [
+            {field: {"$regex": search_text, "$options": "i"}}
+            for field in fields
+        ]
+    }
+    for client in clients["db2"]:
+        # try:  # in case one of the db brokedown
+            total_article_num = client.info.article.count_documents(query)
+            total_page_num = total_article_num // ITEM_PER_PAGE + 1
+            res = client.info.article.find(query).skip((pageid - 1) * ITEM_PER_PAGE).limit(ITEM_PER_PAGE)
+            article_list = list(res)
+            for article in article_list:
+                article["cover"] = find_file_path(article["image"].split(",")[0])
+                article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
+                del article["_id"]
+            break
+        # except:
+        #     pass
+    return render_template("search_article_results.html", pageid=pageid, article_list=article_list, item_per_page=ITEM_PER_PAGE, total_page_num=total_page_num, last_search_text=search_text, total_article_num=total_article_num)
 
 
 @app.route("/frontend/article/<aid>")
 def get_article(aid: str):
-    print(article_by_id(aid))
     return render_template("article_info.html", **article_by_id(aid))
 
 
@@ -179,14 +289,17 @@ def get_user(uid: str):
     reading_list = find_user_read_list(uid)
     tmp_list = []
     for read in reading_list:
-        # for client in clients["db2"]:
-        #     # try:
-        #         article = client.info.article.find_one({"aid": read["aid"]})
-        #     # except:
-        #     #     pass
-        article = article_by_id(read["aid"])
+        for client in clients["db2"]:
+            # try:
+                article = client.info.article.find_one({"aid": read["aid"]})
+                break
+            # except:
+            #     pass
+        article["cover"] = find_file_path(article["image"].split(",")[0])
+        article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
+        
         read["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(read["timestamp"])))
-        del article["date"], article["id"], article["aid"], read["_id"], read["id"], read["timestamp"]
+        del article["_id"], article["date"], article["id"], article["aid"], read["_id"], read["id"], read["timestamp"]
         tmp_list.append(dict(**article, **read))
     reading_list = tmp_list
     # print(reading_list)
