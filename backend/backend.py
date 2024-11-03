@@ -169,7 +169,8 @@ def get_search_results(search_text: str):
 
 @app.route("/frontend/article/<aid>")
 def get_article(aid: str):
-    return render_template("article_info.html", article=article_by_id(aid))
+    print(article_by_id(aid))
+    return render_template("article_info.html", **article_by_id(aid))
 
 
 @app.route("/frontend/user/<uid>")

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>{{ article.title }}</title>
+<title>{{ title }}</title>
 <base href="/">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="" />
@@ -53,51 +53,46 @@
 				<div class="col-lg-9">
 					<div class="mn-vid-sc single_video">
 						<div class="vid-1">
-							<div class="vid-pr">
-                                <a href={{ article.url }} target="_blank">
-                                    <img src={{ vcoverpic }} alt={{ article.title }} width="640" height="264">
-                                </a>
-							</div><!--vid-pr end-->
 							<div class="vid-info">
-								<h3>{{ article.title }}</h3>
+								<h3>{{ title }}</h3>
 								<div class="info-pr">
-									<span>{{ article.play }} 播放量 &nbsp &nbsp &nbsp</span>
-                                    <span>{{ article.dm }} </span>
+									<span>Views: {{ be_read_times }}  &nbsp &nbsp &nbsp</span>
+                                    <span>Comments: {{ comment_num }} </span>
 									<ul class="pr_links">
 										<li>
 {#											<button data-toggle="tooltip" data-placement="top" title="I like this">#}
 {#												<i class="icon-thumbs_up_fill"></i>#}
 {#											</button>#}
-											<span>点赞:{{ article.likes }}&nbsp &nbsp &nbsp</span>
+											<span>Likes: {{ likes }}&nbsp &nbsp &nbsp</span>
 {#                                            <button data-toggle="tooltip" data-placement="top" title="Insert coins">#}
 {#												<img src="static/images/sv4.png" style="width: 20px;height: 30px">#}
 {#                                            </button>#}
-                                            <span>硬币:{{ article.coins }}&nbsp &nbsp &nbsp</span>
-                                            <span>收藏:{{ article.collects }}&nbsp &nbsp &nbsp</span>
-                                            <span>分享:{{ article.shares }}</span>
+                                            <span>Shares: {{ shares }}</span>
 										</li>
 									</ul>
 									<div class="clearfix"></div>
 								</div><!--info-pr end-->
 							</div><!--vid-info end-->
+							<div class="vid-pr">
+								{{ text }}
+								<!-- <img src={{ vcoverpic }} alt={{ title }} width="640" height="264"> -->
+								{% for image in images  %}
+									<img src={{ image }}>
+								{% endfor %}
+								{% for video in videos  %}
+									<video width="640" height="360" controls>
+										<source src={{ video }} type="video/flv">
+										Your browser does not support the video tag.
+									</video>
+								{% endfor %}
+							</div><!--vid-pr end-->
 						</div><!--vid-1 end-->
 						<div class="abt-mk">
 							<div class="info-pr-sec">
 								<div class="vcp_inf cr" style="width: 100%;">
-									<div class="vc_hd">
-                                        <a href={{ article.up_href }} title="" target="_blank">
-                                            <img src={{ article.headportrait }} alt=""
-                                                 style="-webkit-border-radius: 100px;
-                                                        -moz-border-radius: 100px;
-                                                        -ms-border-radius: 100px;
-                                                        -o-border-radius: 100px;
-                                                        border-radius: 100px;
-                                                        width: 100%;">
-                                        </a>
-									</div>
 									<div class="vc_info pr">
-										<h4><a href={{ article.up_href }} title="" target="_blank">{{ article.upname }}</a></h4>
-										<span>Published on {{ article.date }}</span>
+										<!-- <h4><a href={{ up_href }} title="" target="_blank">{{ name }}</a></h4> -->
+										<span>Published on {{ date }}</span>
 									</div>
 								</div><!--vcp_inf end-->
 								<div class="clearfix"></div>
@@ -105,8 +100,8 @@
 							<div class="clearfix"></div>
 							<div class="about-ch-sec">
 								<div class="abt-rw">
-									<h4>视频简介 : </h4>
-									<p>{{ article.intro }}</p>
+									<h4>Abstract: </h4>
+									<p>{{ abstract }}</p>
 								</div>
 							</div><!--about-ch-sec end-->
 						</div><!--abt-mk end-->
@@ -117,45 +112,21 @@
 							</ul>
 							<div class="clearfix"></div>
 							<div class="clearfix"></div>
-							<ul class="cmn-lst">
-                                {% if article.reply1 %}
+							<ul class="cmn-lst"> <!--comment list-->
+                                {% if reply1 %}
 								    <li>
                                         <div class="pinned-comment">
                                             <span><i class="icon-pinned"></i></span>
                                         </div>
-                                        <p>{{ article.reply1 }}</p>
+                                        <p>{{ reply1 }}</p>
 								    </li>
                                 {% endif %}
-                                {% if article.reply2 %}
+                                {% if reply2 %}
 								    <li>
                                         <div class="pinned-comment">
                                             <span><i class="icon-pinned"></i></span>
                                         </div>
-                                        <p>{{ article.reply2 }}</p>
-								    </li>
-                                {% endif %}
-                                {% if article.reply3 %}
-								    <li>
-                                        <div class="pinned-comment">
-                                            <span><i class="icon-pinned"></i></span>
-                                        </div>
-                                        <p>{{ article.reply3 }}</p>
-								    </li>
-                                {% endif %}
-                                {% if article.reply4 %}
-								    <li>
-                                        <div class="pinned-comment">
-                                            <span><i class="icon-pinned"></i></span>
-                                        </div>
-                                        <p>{{ article.reply4 }}</p>
-								    </li>
-                                {% endif %}
-                                {% if article.reply5 %}
-								    <li>
-                                        <div class="pinned-comment">
-                                            <span><i class="icon-pinned"></i></span>
-                                        </div>
-                                        <p>{{ article.reply5 }}</p>
+                                        <p>{{ reply2 }}</p>
 								    </li>
                                 {% endif %}
 							</ul><!--comment list end-->
