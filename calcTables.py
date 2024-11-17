@@ -7,8 +7,8 @@ from utils import get_container_names, load_jsonl, import_data_to_mongo
 
 if __name__ == "__main__":
     
-    db1 = MongoClient(host="localhost", port=27001),
-    db2 = MongoClient(host="localhost", port=27002),
+    db1 = MongoClient(host="localhost", port=27001)
+    db2 = MongoClient(host="localhost", port=27002)
     print(db1)
 
     #query for Be-read table
@@ -23,29 +23,30 @@ if __name__ == "__main__":
                     "agreeNum":{"$sum":"$agreeOrNot"}, 
                     "agreeUidList":{"$addToSet": {"$cond":[{"$eq":["$agreeOrNot", 1]},"$uid","$$REMOVE" ]}},
                     "shareNum":{"$sum":"$shareOrNot"} ,
-                    "shareUidList":{"$addToSet": {"$cond":[{"$eq":["$shareOrNot", 1]},"$uid","$$REMOVE" ]}}
-                }}
-    ],
+                    "shareUidList":{"$addToSet": {"$cond":[{"$eq":["$shareOrNot", 1]},"$uid","$$REMOVE" ]}},
+                }
+        }
+    ]
 
-    beReadDB = db1.history.read.aggregate(pipeline),
+    beReadDB = db1.history.read.aggregate(pipeline)
 
-    with open("db-generation/beRead.dat", "w+") as f:
-        i =0,
+    with open("db-generation/beRead.dat", "w") as f:
+        i = 0
         for read in beReadDB:
-            i = i+1,
-            beRead={},
-            beRead["id"] = 'br'+str(i),
-            beRead['timestamp'] = read['timestamp'],
-            beRead['aid'] = read['_id'],
-            beRead['readNum'] = read['readNum'],
-            beRead['readUidList'] = read['readUidList'],
-            beRead['commentNum'] = read['commentNum'],
-            beRead['commentUidList'] = read['commentUidList'],
-            beRead['agreeNum'] = read['agreeNum'],
-            beRead['agreeUidList'] = read['agreeUidList'],
-            beRead['shareNum'] = read['shareNum'],
-            beRead['shareUidList'] = read['shareUidList'],
-            json.dump(beRead,f)
+            i = i + 1
+            beRead={}
+            beRead["id"] = 'br'+str(i)
+            beRead['timestamp'] = read['timestamp']
+            beRead['aid'] = read['_id']
+            beRead['readNum'] = read['readNum']
+            beRead['readUidList'] = read['readUidList']
+            beRead['commentNum'] = read['commentNum']
+            beRead['commentUidList'] = read['commentUidList']
+            beRead['agreeNum'] = read['agreeNum']
+            beRead['agreeUidList'] = read['agreeUidList']
+            beRead['shareNum'] = read['shareNum']
+            beRead['shareUidList'] = read['shareUidList']
+            json.dump(beRead, f)
             f.write("\n")
     f.close()
 
@@ -53,22 +54,27 @@ if __name__ == "__main__":
     #query aid of category "science"
     db1_dir = "ddbs/1"
     db2_dir = "ddbs/2"
-    science = db2.info.article.find({"category":{"$eq":"science"}}, {"aid":1}),
+    sci_cursor = list(db1.info.article.find({}, {"aid": 1}))
 
     f1 = open(f"{db1_dir}/be_read.jsonl", "w")
     f2 = open(f"{db2_dir}/be_read.jsonl", "w")
     with open("db-generation/beRead.dat", "r", encoding="utf-8") as f:
         for slic in tqdm(f):
             slic = json.loads(slic)
-            if slic["aid"] in science['aid']:
-                f1.write(json.dumps(slic) + "\n")
-                f2.write(json.dumps(slic) + "\n")
-            else:
+            is_science = False
+            for document in sci_cursor:
+                if slic["aid"] == document["aid"]:
+                    is_science = True
+                    f1.write(json.dumps(slic) + "\n")
+                    f2.write(json.dumps(slic) + "\n")
+                    break
+            if not is_science:
                 f2.write(json.dumps(slic) + "\n")
     f1.close()
     f2.close()
 
-     #--------import to Mongo
+    #--------import to Mongo
+    time.sleep(5)  # in case mounting is not completed
     data_load_path = "/data_load"
     mongo_containers = sorted(get_container_names(prefix="ddbs"), key=lambda x: len(x))
     for container_name in mongo_containers:
@@ -98,7 +104,7 @@ if __name__ == "__main__":
         }},
     ]
 
-    popularDailyRank = db2.history.be_read.aggregate(dailypipeline),
+    popularDailyRank = db2.history.be_read.aggregate(dailypipeline)
 
     weeklyPipeline = [
         {"$unwind": "$timestamp"},
@@ -120,7 +126,7 @@ if __name__ == "__main__":
         }},
     ]
 
-    popularWeeklyRank = db2.history.be_read.aggregate(weeklyPipeline),
+    popularWeeklyRank = db2.history.be_read.aggregate(weeklyPipeline)
 
     monthlyPipeline=[
         {"$unwind": "$timestamp"},
@@ -143,12 +149,12 @@ if __name__ == "__main__":
         }},
     ]
 
-    popularMonthlyRank = db2.history.be_read.aggregate(monthlyPipeline),
+    popularMonthlyRank = db2.history.be_read.aggregate(monthlyPipeline)
 
-    with open("db-generation/popularRank.dat", "w+") as f:
-        i=0,
+    with open("db-generation/popularRank.dat", "w") as f:
+        i = 0
         for daily in popularDailyRank:
-            i = i+1,
+            i = i + 1
             popular={}
             popular["id"] = 'prd'+str(i)
             popular['timestamp'] = daily["date"]
@@ -158,7 +164,7 @@ if __name__ == "__main__":
             f.write("\n")
 
         for weekly in popularWeeklyRank:
-            i = i+1,
+            i = i + 1
             popularW={}
             popularW["id"] = 'prd'+str(1)
             popularW['timestamp'] = weekly["date"]
