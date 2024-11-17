@@ -16,6 +16,7 @@ if __name__ == "__main__":
         {"$unionWith": {"coll": "db2.history.read"}},
         {"$group": {"_id": "$aid", 
                     "readNum":{"$sum":1}, 
+                    "timestamp": {"$addToSet": "$timestamp"},
                     "readUidList":{"$addToSet": "$uid"}, 
                     "commentNum":{"$sum":"$commentOrNot"},
                     "commentUidList": {"$addToSet": {"$cond":[{"$eq":["$commentOrNot", 1]},"$uid","$$REMOVE" ]}}, 
@@ -34,7 +35,7 @@ if __name__ == "__main__":
             i = i+1,
             beRead={},
             beRead["id"] = 'br'+str(i),
-            beRead['timestamp'] = time.time(),
+            beRead['timestamp'] = read['timestamp'],
             beRead['aid'] = read['_id'],
             beRead['readNum'] = read['readNum'],
             beRead['readUidList'] = read['readUidList'],
@@ -47,95 +48,7 @@ if __name__ == "__main__":
             json.dump(beRead,f)
             f.write("\n")
     f.close()
-    
-    #query for popular-rank table
-    #get 'today' start and end time
-    t = time.localtime(),
-    startToday = t,
-    endToday = t
-    startToday['tm_hour']=0
-    startToday['tm_min']=0
-    startToday['tm_sec']=0
-    start = time.mktime(startToday)
 
-    endToday['tm_hour']=23
-    endToday['tm_min']=59
-    endToday['tm_sec']=59
-    end = time.mktime(endToday)
-
-    dailypipeline = [
-        {"$match":{"timestamp": {"$gte":start, "$lte":end}}},
-        {"$unionWith": {"coll": "db2.history.read", "pipeline":[{"$match":{"timestamp": {"$gte":start, "$lte":end}}}] }},
-        {"$group": {"_id":"$aid",
-                    "readNum": {"$sum":1},
-                    }},
-        {"$sort": {"readNum": -1}}, #descending
-        {"$limit": 5},
-    ]
-
-    popularDailyRank = db1.history.read.aggregate(dailypipeline),
-
-    #get weekly start and end time
-    weekInSec = 7*24*60*60
-    startWeek = start - weekInSec
-    endWeek = end
-
-    weeklyPipeline = [
-        {"$match":{"timestamp": {"$gte":startWeek, "$lte":endWeek}}},
-        {"$unionWith": {"coll": "db2.history.read", "pipeline":[{"$match":{"timestamp": {"$gte":startWeek, "$lte":endWeek}}}] }},
-        {"$group": {"_id":"$aid",
-                    "readNum": {"$sum":1},
-                    }},
-        {"$sort": {"readNum": -1}}, #descending
-        {"$limit": 5},
-    ]
-
-    popularWeeklyRank = db1.history.read.aggregate(weeklyPipeline),
-
-    #get monthly start and end Time
-    monthInSec = 30*24*60*60
-    startMonth = start - monthInSec
-    endMonth = end
-
-    monthlyPipeline=[
-        {"$match":{"timestamp": {"$gte":startMonth, "$lte":endMonth}}},
-        {"$unionWith": {"coll": "db2.history.read", "pipeline":[{"$match":{"timestamp": {"$gte":startMonth, "$lte":endMonth}}}] }},
-        {"$group": {"_id":"$aid",
-                    "readNum": {"$sum":1},
-                    }},
-        {"$sort": {"readNum": -1}}, #descending
-        {"$limit": 5},
-    ]
-
-    popularMonthlyRank = db1.history.read.aggregate(monthlyPipeline),
-
-    with open("db-generation/popularRank.dat", "w+") as f:
-        popular={}
-        popular["id"] = 'prd'+str(0)
-        popular['timestamp'] = time.time()
-        popular["temporalGranularity"] = "daily"
-        popular["articleAidList"] = popularDailyRank["_id"]
-        json.dump(popular,f)
-        f.write("\n")
-
-        popularW={}
-        popularW["id"] = 'prd'+str(1)
-        popularW['timestamp'] = time.time()
-        popularW["temporalGranularity"] = "weekly"
-        popularW["articleAidList"] = popularWeeklyRank["_id"]
-        json.dump(popular,f)
-        f.write("\n")
-
-        popularM={}
-        popularM["id"] = 'prd'+str(2)
-        popularM['timestamp'] = time.time()
-        popularM["temporalGranularity"] = "monthly"
-        popularM["articleAidList"] = popularMonthlyRank["_id"]
-        json.dump(popular,f)
-        f.write("\n")
-    f.close()
-
-    
     # ----------- slice Be-Read Table
     #query aid of category "science"
     db1_dir = "ddbs/1"
@@ -154,6 +67,116 @@ if __name__ == "__main__":
                 f2.write(json.dumps(slic) + "\n")
     f1.close()
     f2.close()
+
+     #--------import to Mongo
+    data_load_path = "/data_load"
+    mongo_containers = sorted(get_container_names(prefix="ddbs"), key=lambda x: len(x))
+    for container_name in mongo_containers:
+        import_data_to_mongo(container_name, "history", "be_read", f"{data_load_path}/be_read.jsonl")
+    
+    #------query for popular-rank table
+
+    dailypipeline = [
+        {"$unwind": "$timestamp"},
+        {"$addFields": {"timestampDate": {"$dateFromString": {"dateString": "$timestamp"} } }},
+        {"$project": {
+            "year": {"$year": "$timestampDate"},
+            "month":{"$month": "$timestampDate"},
+            "day": {"$dayOfMonth": "$timestampDate"},
+            "aid": "$aid",
+         }},
+        {"$group": {"_id":{"year": "$year", "month": "$month", "day": "$day", "aid": "$aid"},
+                    "readNum": {"$sum":1},
+                    }},
+        {"$sort": {"_id.year": 1, "_id.month":1, "_id.day": 1, "readNum": -1}}, #descending is -1 
+        {"$group": {"_id": {"year": "$_id.year", "month": "$_id.month", "day": "$_id.day"},
+                    "articles": {"$push": {"aid": "$_id.aid"}}
+                    }},
+        {"$project": {
+            "articleAidList":{"$slice":["articles",5]},
+            "date": {"$dateFromParts": {"year":"$_id.year", "month":"$_id.month", "day":"$_id.day"}},
+        }},
+    ]
+
+    popularDailyRank = db2.history.be_read.aggregate(dailypipeline),
+
+    weeklyPipeline = [
+        {"$unwind": "$timestamp"},
+        {"$addFields": {"timestampDate": {"$dateFromString": {"dateString": "$timestamp"} } }},
+        {"$project": {
+            "startWeekDate":{"$dateTrunc": {"date":"$timestampDate", "unit":"week"}},
+            "aid": "$aid",
+         }},
+        {"$group": {"_id":{"startWeekDate": "$startWeekDate", "aid": "$aid"},
+                    "readNum": {"$sum":1},
+                    }},
+        {"$sort": {"_id.startWeekDate": 1, "readNum": -1}}, #descending is -1 
+        {"$group": {"_id": {"startWeekDate": "$_id.startWeekDate"},
+                    "articles": {"$push": {"aid": "$_id.aid"}}
+                    }},
+        {"$project": {
+            "articleAidList":{"$slice":["articles",5]},
+            "date": "$_id.startWeekDate",
+        }},
+    ]
+
+    popularWeeklyRank = db2.history.be_read.aggregate(weeklyPipeline),
+
+    monthlyPipeline=[
+        {"$unwind": "$timestamp"},
+        {"$addFields": {"timestampDate": {"$dateFromString": {"dateString": "$timestamp"} } }},
+        {"$project": {
+            "year": {"$year": "$timestampDate"},
+            "month":{"$month": "$timestampDate"},
+            "aid": "$aid",
+         }},
+        {"$group": {"_id":{"year": "$year", "month": "$month", "aid": "$aid"},
+                    "readNum": {"$sum":1},
+                    }},
+        {"$sort": {"_id.year": 1, "_id.month":1, "readNum": -1}}, #descending is -1 
+        {"$group": {"_id": {"year": "$_id.year", "month": "$_id.month"},
+                    "articles": {"$push": {"aid": "$_id.aid"}}
+                    }},
+        {"$project": {
+            "articleAidList":{"$slice":["articles",5]},
+            "date": {"$dateFromParts": {"year":"$_id.year", "month":"$_id.month"}},
+        }},
+    ]
+
+    popularMonthlyRank = db2.history.be_read.aggregate(monthlyPipeline),
+
+    with open("db-generation/popularRank.dat", "w+") as f:
+        i=0,
+        for daily in popularDailyRank:
+            i = i+1,
+            popular={}
+            popular["id"] = 'prd'+str(i)
+            popular['timestamp'] = daily["date"]
+            popular["temporalGranularity"] = "daily"
+            popular["articleAidList"] = daily["articleAidList"]
+            json.dump(popular,f)
+            f.write("\n")
+
+        for weekly in popularWeeklyRank:
+            i = i+1,
+            popularW={}
+            popularW["id"] = 'prd'+str(1)
+            popularW['timestamp'] = weekly["date"]
+            popularW["temporalGranularity"] = "weekly"
+            popularW["articleAidList"] = weekly["articleAidList"]
+            json.dump(popular,f)
+            f.write("\n")
+
+        for monthly in popularMonthlyRank:
+            i = i+1
+            popularM={}
+            popularM["id"] = 'prd'+str(i)
+            popularM['timestamp'] = monthly["date"]
+            popularM["temporalGranularity"] = "monthly"
+            popularM["articleAidList"] = monthly["articleAidList"]
+            json.dump(popular,f)
+            f.write("\n")
+    f.close()
 
     # ----------- slice PopularRank Table
     f1 = open(f"{db1_dir}/popular_rank.jsonl", "w")
@@ -175,6 +198,5 @@ if __name__ == "__main__":
     data_load_path = "/data_load"
     mongo_containers = sorted(get_container_names(prefix="ddbs"), key=lambda x: len(x))
     for container_name in mongo_containers:
-        import_data_to_mongo(container_name, "history", "be_read", f"{data_load_path}/be_read.jsonl")
         import_data_to_mongo(container_name, "history", "popular_rank", f"{data_load_path}/popular_rank.jsonl")
     
