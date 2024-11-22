@@ -2,6 +2,7 @@
 from pymongo import MongoClient
 import json
 import time
+import datetime
 from tqdm import tqdm
 from utils import get_container_names, load_jsonl, import_data_to_mongo
 
@@ -84,7 +85,7 @@ if __name__ == "__main__":
 
     dailypipeline = [
         {"$unwind": "$timestamp"},
-        {"$addFields": {"timestampDate": {"$dateFromString": {"dateString": "$timestamp"} } }},
+        {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}} } }},
         {"$project": {
             "year": {"$year": "$timestampDate"},
             "month":{"$month": "$timestampDate"},
@@ -99,18 +100,18 @@ if __name__ == "__main__":
                     "articles": {"$push": {"aid": "$_id.aid"}}
                     }},
         {"$project": {
-            "articleAidList":{"$slice":["articles",5]},
+            "articleAidList":{"$slice":["$articles",5]},
             "date": {"$dateFromParts": {"year":"$_id.year", "month":"$_id.month", "day":"$_id.day"}},
         }},
     ]
 
-    popularDailyRank = db2.history.be_read.aggregate(dailypipeline)
+    popularDailyRank = db2.history.be_read.aggregate(dailypipeline, allowDiskUse=True)
 
     weeklyPipeline = [
         {"$unwind": "$timestamp"},
-        {"$addFields": {"timestampDate": {"$dateFromString": {"dateString": "$timestamp"} } }},
+        {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}} } }},
         {"$project": {
-            "startWeekDate":{"$dateTrunc": {"date":"$timestampDate", "unit":"week"}},
+            "startWeekDate":{'$subtract': ['$timestampDate', {'$multiply': [{'$subtract':[{'$dayOfWeek':'$timestampDate'}, 1]}, 86400000]}]},
             "aid": "$aid",
          }},
         {"$group": {"_id":{"startWeekDate": "$startWeekDate", "aid": "$aid"},
@@ -121,16 +122,16 @@ if __name__ == "__main__":
                     "articles": {"$push": {"aid": "$_id.aid"}}
                     }},
         {"$project": {
-            "articleAidList":{"$slice":["articles",5]},
+            "articleAidList":{"$slice":["$articles",5]},
             "date": "$_id.startWeekDate",
         }},
     ]
 
-    popularWeeklyRank = db2.history.be_read.aggregate(weeklyPipeline)
+    popularWeeklyRank = db2.history.be_read.aggregate(weeklyPipeline, allowDiskUse=True)
 
     monthlyPipeline=[
         {"$unwind": "$timestamp"},
-        {"$addFields": {"timestampDate": {"$dateFromString": {"dateString": "$timestamp"} } }},
+        {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}} } }},
         {"$project": {
             "year": {"$year": "$timestampDate"},
             "month":{"$month": "$timestampDate"},
@@ -144,12 +145,12 @@ if __name__ == "__main__":
                     "articles": {"$push": {"aid": "$_id.aid"}}
                     }},
         {"$project": {
-            "articleAidList":{"$slice":["articles",5]},
+            "articleAidList":{"$slice":["$articles",5]},
             "date": {"$dateFromParts": {"year":"$_id.year", "month":"$_id.month"}},
         }},
     ]
 
-    popularMonthlyRank = db2.history.be_read.aggregate(monthlyPipeline)
+    popularMonthlyRank = db2.history.be_read.aggregate(monthlyPipeline, allowDiskUse=True)
 
     with open("db-generation/popularRank.dat", "w") as f:
         i = 0
@@ -157,7 +158,7 @@ if __name__ == "__main__":
             i = i + 1
             popular={}
             popular["id"] = 'prd'+str(i)
-            popular['timestamp'] = daily["date"]
+            popular['timestamp'] = daily["date"].timestamp()
             popular["temporalGranularity"] = "daily"
             popular["articleAidList"] = daily["articleAidList"]
             json.dump(popular,f)
@@ -167,7 +168,7 @@ if __name__ == "__main__":
             i = i + 1
             popularW={}
             popularW["id"] = 'prd'+str(1)
-            popularW['timestamp'] = weekly["date"]
+            popularW['timestamp'] = weekly["date"].timestamp()
             popularW["temporalGranularity"] = "weekly"
             popularW["articleAidList"] = weekly["articleAidList"]
             json.dump(popular,f)
@@ -177,7 +178,7 @@ if __name__ == "__main__":
             i = i+1
             popularM={}
             popularM["id"] = 'prd'+str(i)
-            popularM['timestamp'] = monthly["date"]
+            popularM['timestamp'] = monthly["date"].timestamp()
             popularM["temporalGranularity"] = "monthly"
             popularM["articleAidList"] = monthly["articleAidList"]
             json.dump(popular,f)
