@@ -85,104 +85,160 @@ if __name__ == "__main__":
 
     dailypipeline = [
         {"$unwind": "$timestamp"},
-        {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}} } }},
+        {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}}}}},
         {"$project": {
             "year": {"$year": "$timestampDate"},
-            "month":{"$month": "$timestampDate"},
+            "month": {"$month": "$timestampDate"},
             "day": {"$dayOfMonth": "$timestampDate"},
             "aid": "$aid",
-         }},
-        {"$group": {"_id":{"year": "$year", "month": "$month", "day": "$day", "aid": "$aid"},
-                    "readNum": {"$sum":1},
-                    }},
-        {"$sort": {"_id.year": 1, "_id.month":1, "_id.day": 1, "readNum": -1}}, #descending is -1 
+        }},
+        {"$group": {"_id": {"year": "$year", "month": "$month", "day": "$day", "aid": "$aid"},
+                    "readNum": {"$sum": 1},
+        }},
+        {"$sort": {"_id.year": 1, "_id.month": 1, "_id.day": 1, "readNum": -1}}, #descending is -1 
         {"$group": {"_id": {"year": "$_id.year", "month": "$_id.month", "day": "$_id.day"},
                     "articles": {"$push": {"aid": "$_id.aid"}}
-                    }},
+        }},
         {"$project": {
-            "articleAidList":{"$slice":["$articles",5]},
-            "date": {"$dateFromParts": {"year":"$_id.year", "month":"$_id.month", "day":"$_id.day"}},
+            "articleAidList":{"$slice":["$articles", 5]},
+            "date": {"$dateFromParts": {"year": "$_id.year", "month": "$_id.month", "day": "$_id.day"}},
         }},
     ]
 
     popularDailyRank = db2.history.be_read.aggregate(dailypipeline, allowDiskUse=True)
 
     weeklyPipeline = [
+        # Unwind the timestamp array
         {"$unwind": "$timestamp"},
-        {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}} } }},
+        
+        # Convert the timestamp field to date format
+        {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}}}}},
+        
+        # Extract year, week, and article ID (aid)
         {"$project": {
-            "startWeekDate":{'$subtract': ['$timestampDate', {'$multiply': [{'$subtract':[{'$dayOfWeek':'$timestampDate'}, 1]}, 86400000]}]},
-            "aid": "$aid",
-         }},
-        {"$group": {"_id":{"startWeekDate": "$startWeekDate", "aid": "$aid"},
-                    "readNum": {"$sum":1},
-                    }},
-        {"$sort": {"_id.startWeekDate": 1, "readNum": -1}}, #descending is -1 
-        {"$group": {"_id": {"startWeekDate": "$_id.startWeekDate"},
-                    "articles": {"$push": {"aid": "$_id.aid"}}
-                    }},
-        {"$project": {
-            "articleAidList":{"$slice":["$articles",5]},
-            "date": "$_id.startWeekDate",
+            "year": {"$isoWeekYear": "$timestampDate"}, # Extract year (ISO-8601 standard)
+            "week": {"$isoWeek": "$timestampDate"},     # Extract week number
+            "aid": "$aid"
         }},
+        
+        # Group by year, week, and aid, and count the number of reads for each article each week
+        {"$group": {
+            "_id": {"year": "$year", "week": "$week", "aid": "$aid"},
+            "readNum": {"$sum": 1}
+        }},
+        
+        # Sort by year and week in ascending order, and within each week, sort by read count in descending order
+        {"$sort": {"_id.year": 1, "_id.week": 1, "readNum": -1}},
+        
+        # Group by year and week, collect the article IDs for the week
+        {"$group": {
+            "_id": {"year": "$_id.year", "week": "$_id.week"},
+            "articles": {"$push": {"aid": "$_id.aid"}}
+        }},
+        
+        # Select the top 5 most-read articles for each week and generate the date range
+         {"$project": {
+            "articleAidList": {"$slice": ["$articles", 5]}, # Select the top 5 articles
+            "weekOfYear": "$_id.week",  # the week number of the year
+            "startDate": {"$dateFromParts": {  # Start date of the week
+                "isoWeekYear": "$_id.year",
+                "isoWeek": "$_id.week",
+                "isoDayOfWeek": 1  # First day of the ISO week (Monday)
+            }},
+            "endDate": {"$dateFromParts": {  # End date of the week
+                "isoWeekYear": "$_id.year",
+                "isoWeek": "$_id.week",
+                "isoDayOfWeek": 7  # Last day of the ISO week (Sunday)
+            }}
+        }}
     ]
 
     popularWeeklyRank = db2.history.be_read.aggregate(weeklyPipeline, allowDiskUse=True)
 
-    monthlyPipeline=[
+    monthlyPipeline = [
         {"$unwind": "$timestamp"},
-        {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}} } }},
+        {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}}}}},
         {"$project": {
-            "year": {"$year": "$timestampDate"},
-            "month":{"$month": "$timestampDate"},
+            "year": {"$year": "$timestampDate"},  # Extract the year
+            "month": {"$month": "$timestampDate"},  # Extract the month
             "aid": "$aid",
-         }},
-        {"$group": {"_id":{"year": "$year", "month": "$month", "aid": "$aid"},
-                    "readNum": {"$sum":1},
-                    }},
-        {"$sort": {"_id.year": 1, "_id.month":1, "readNum": -1}}, #descending is -1 
-        {"$group": {"_id": {"year": "$_id.year", "month": "$_id.month"},
-                    "articles": {"$push": {"aid": "$_id.aid"}}
-                    }},
-        {"$project": {
-            "articleAidList":{"$slice":["$articles",5]},
-            "date": {"$dateFromParts": {"year":"$_id.year", "month":"$_id.month"}},
         }},
+        {"$group": {
+            "_id": {"year": "$year", "month": "$month", "aid": "$aid"},
+            "readNum": {"$sum": 1}
+        }},
+        {"$sort": {"_id.year": 1, "_id.month": 1, "readNum": -1}},
+        {"$group": {
+            "_id": {"year": "$_id.year", "month": "$_id.month"},
+            "articles": {"$push": {"aid": "$_id.aid"}}
+        }},
+        {"$project": {
+            "articleAidList": {"$slice": ["$articles", 5]},  # Select the top 5 articles
+            "month": "$_id.month",  # the month number of the year
+            "startDate": {"$dateFromParts": {  # Start date of the month
+                "year": "$_id.year",
+                "month": "$_id.month",
+                "day": 1
+            }},
+            "endDate": {"$dateFromParts": {  # End date of the month
+                "year": "$_id.year",
+                "month": "$_id.month",
+                "day": {
+                    "$switch": {  # Calculate the last day of the month
+                        "branches": [
+                            {"case": {"$in": ["$_id.month", [1, 3, 5, 7, 8, 10, 12]]}, "then": 31},
+                            {"case": {"$in": ["$_id.month", [4, 6, 9, 11]]}, "then": 30},
+                            {"case": {
+                                "$and": [
+                                    {"$eq": ["$_id.month", 2]},  # Check for February
+                                    {"$eq": [{"$mod": ["$_id.year", 4]}, 0]},  # Leap year
+                                    {"$or": [
+                                        {"$ne": [{"$mod": ["$_id.year", 100]}, 0]},
+                                        {"$eq": [{"$mod": ["$_id.year", 400]}, 0]}
+                                    ]}
+                                ]
+                            }, "then": 29},  # February in a leap year
+                            {"case": {"$eq": ["$_id.month", 2]}, "then": 28}  # Regular February
+                        ],
+                        "default": None
+                    }
+                }
+            }}
+        }}
     ]
 
     popularMonthlyRank = db2.history.be_read.aggregate(monthlyPipeline, allowDiskUse=True)
+    
+    # print(len(list(popularDailyRank)), len(list(popularWeeklyRank)), len(list(popularMonthlyRank)))
 
     with open("db-generation/popularRank.dat", "w") as f:
         i = 0
         for daily in popularDailyRank:
             i = i + 1
-            popular={}
-            popular["id"] = 'prd'+str(i)
-            popular['timestamp'] = daily["date"].timestamp()
-            popular["temporalGranularity"] = "daily"
-            popular["articleAidList"] = daily["articleAidList"]
-            json.dump(popular,f)
-            f.write("\n")
+            popularD={}
+            popularD["id"] = 'prd'+str(i)
+            popularD['timestamp'] = daily["date"].timestamp()
+            popularD["temporalGranularity"] = "daily"
+            popularD["articleAidList"] = daily["articleAidList"]
+            f.write(json.dumps(popularD) + "\n")
 
         for weekly in popularWeeklyRank:
             i = i + 1
             popularW={}
             popularW["id"] = 'prd'+str(1)
-            popularW['timestamp'] = weekly["date"].timestamp()
+            popularW['timestamp'] = weekly["startDate"].timestamp()
             popularW["temporalGranularity"] = "weekly"
             popularW["articleAidList"] = weekly["articleAidList"]
-            json.dump(popular,f)
-            f.write("\n")
+            f.write(json.dumps(popularW) + "\n")
 
         for monthly in popularMonthlyRank:
-            i = i+1
+            i = i + 1
             popularM={}
             popularM["id"] = 'prd'+str(i)
-            popularM['timestamp'] = monthly["date"].timestamp()
+            popularM['timestamp'] = monthly["startDate"].timestamp()
             popularM["temporalGranularity"] = "monthly"
             popularM["articleAidList"] = monthly["articleAidList"]
-            json.dump(popular,f)
-            f.write("\n")
+            f.write(json.dumps(popularM) + "\n")
     f.close()
 
     # ----------- slice PopularRank Table
