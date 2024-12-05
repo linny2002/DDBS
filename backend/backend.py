@@ -2,6 +2,7 @@ from flask import Flask, request, render_template
 import requests
 from pymongo import MongoClient
 import time
+from datetime import datetime, timezone
 
 
 clients = dict(
@@ -77,7 +78,7 @@ def article_by_id(aid):
             text = requests.get(text_path).text
             images = [find_file_path(i).strip() for i in article["image"].split(",") if i.strip()]
             videos = [find_file_path(i).strip() for i in article["video"].split(",") if i.strip()]
-            article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
+            article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"]) / 1000))
             del article["_id"], article["timestamp"], article["text"], article["image"], article["video"]
             ret = dict(text=text, images=images, videos=videos, **article)
             return ret
@@ -165,7 +166,7 @@ def article_list_page(pageid: int):
             article_list = list(res)
             for article in article_list:
                 article["cover"] = find_file_path(article["image"].split(",")[0])
-                article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
+                article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"]) / 1000))
                 del article["_id"]
             break
         # except:
@@ -270,7 +271,7 @@ def search_article_results(search_text: str, pageid: str):
             article_list = list(res)
             for article in article_list:
                 article["cover"] = find_file_path(article["image"].split(",")[0])
-                article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
+                article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"]) / 1000))
                 del article["_id"]
             break
         # except:
@@ -297,7 +298,7 @@ def get_user(uid: str):
             #     pass
         article["cover"] = find_file_path(article["image"].split(",")[0])
         
-        read["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(read["timestamp"])))
+        read["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(read["timestamp"]) / 1000))
         del article["_id"], article["id"], article["aid"], read["_id"], read["id"], read["timestamp"]
         tmp_list.append(dict(**article, **read))
     reading_list = tmp_list
