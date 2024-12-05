@@ -186,7 +186,7 @@ def get_search_user_results():
 @app.route("/frontend/search_user/<search_text>/<pageid>")
 def search_user_results(search_text: str, pageid: str):
     pageid = int(pageid)
-    fields = ["uid", "email", "phone"]  # 需要搜索的字段
+    fields = ["uid", "name", "email", "phone"]  # 需要搜索的字段
     query = {
         "$or": [
             {field: {"$regex": search_text, "$options": "i"}}
