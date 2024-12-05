@@ -296,10 +296,9 @@ def get_user(uid: str):
             # except:
             #     pass
         article["cover"] = find_file_path(article["image"].split(",")[0])
-        article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
         
         read["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(read["timestamp"])))
-        del article["_id"], article["date"], article["id"], article["aid"], read["_id"], read["id"], read["timestamp"]
+        del article["_id"], article["id"], article["aid"], read["_id"], read["id"], read["timestamp"]
         tmp_list.append(dict(**article, **read))
     reading_list = tmp_list
     # print(reading_list)
