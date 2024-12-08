@@ -75,7 +75,7 @@ if __name__ == "__main__":
     f2.close()
 
     #--------import to Mongo
-    time.sleep(5)  # in case mounting is not completed
+    # time.sleep(5)  # in case mounting is not completed
     data_load_path = "/data_load"
     mongo_containers = sorted(get_container_names(prefix="ddbs"), key=lambda x: len(x))
     for container_name in mongo_containers:

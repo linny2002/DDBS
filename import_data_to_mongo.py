@@ -25,10 +25,7 @@ if __name__ == "__main__":
         import_data_to_mongo(container_name, "info", "user", f"{data_load_path}/user.jsonl")
         import_data_to_mongo(container_name, "info", "article", f"{data_load_path}/article.jsonl")
         import_data_to_mongo(container_name, "history", "read", f"{data_load_path}/read.jsonl")
-        # TODO: import Be-Read and Popular-Rank jsonl file to mongo
-        # import_data_to_mongo(container_name, "history", "be_read", f"{data_load_path}/be_read.jsonl")
-        # import_data_to_mongo(container_name, "history", "popular_rank", f"{data_load_path}/popular_rank.jsonl")
-    
+
     # # import data by pymongo
     # for id in [1, 2]:
     #     for client in tqdm(clients[f"db{id}"]):

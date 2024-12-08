@@ -23,7 +23,8 @@ python3 import_data_to_mongo.py
 echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
 
 # create the Be-Read and Popular-Rank Table and import them into DB container
-python3 calTables.py
+python3 calcTables.py
+echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
 
 # # upload all the texts, images and videos of every article to fastdfs
 # docker exec -it storage1 bash -c "cp /etc/fdfs/client.conf /etc/fdfs_buffer"
