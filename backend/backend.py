@@ -2,7 +2,7 @@ from flask import Flask, request, render_template
 import requests
 from pymongo import MongoClient
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 
 clients = dict(
@@ -333,13 +333,13 @@ def get_user(uid: str):
 def get_popular_rank(grainaty: str, date:str):
     #transform date string into timestamp and adjust date according to granularity
     if grainaty == "daily":
-        date = datetime.datetime.strptime(date, "%Y-%m-%d").timestamp()
+        date = datetime.strptime(date, "%Y-%m-%d").timestamp()
     elif grainaty == "monthly":
-        date = datetime.datetime.strptime(date, "%Y-%m-%d").replace(day=1).timestamp()
+        date = datetime.strptime(date, "%Y-%m-%d").replace(day=1).timestamp()
         print(date)
     else:
-        dt = datetime.datetime.strptime(date, "%Y-%m-%d")
-        weekstart = dt - datetime.timedelta(days=dt.weekday())
+        dt = datetime.strptime(date, "%Y-%m-%d")
+        weekstart = dt - timedelta(days=dt.weekday())
         print(weekstart)
         date = weekstart.timestamp()
     popular = get_popular_by_granularity(grainaty, date)
