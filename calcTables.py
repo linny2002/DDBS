@@ -15,18 +15,23 @@ if __name__ == "__main__":
     #query for Be-read table
     pipeline = [
         {"$unionWith": {"coll": "db2.history.read"}},
-        {"$group": {"_id": "$aid", 
-                    "readNum":{"$sum":1}, 
-                    "timestamp": {"$addToSet": "$timestamp"},
-                    "readUidList":{"$addToSet": "$uid"}, 
-                    "commentNum":{"$sum":"$commentOrNot"},
-                    "commentUidList": {"$addToSet": {"$cond":[{"$eq":["$commentOrNot", 1]},"$uid","$$REMOVE" ]}}, 
-                    "agreeNum":{"$sum":"$agreeOrNot"}, 
-                    "agreeUidList":{"$addToSet": {"$cond":[{"$eq":["$agreeOrNot", 1]},"$uid","$$REMOVE" ]}},
-                    "shareNum":{"$sum":"$shareOrNot"} ,
-                    "shareUidList":{"$addToSet": {"$cond":[{"$eq":["$shareOrNot", 1]},"$uid","$$REMOVE" ]}},
-                }
-        }
+        {"$addFields": {
+            "agreeOrNot": {"$toInt": "$agreeOrNot"},
+            "commentOrNot": {"$toInt": "$commentOrNot"},
+            "shareOrNot": {"$toInt": "$shareOrNot"}
+        }},
+        {"$group": {
+            "_id": "$aid",
+            "readNum": {"$sum": 1}, 
+            "timestamp": {"$addToSet": "$timestamp"}, 
+            "readUidList": {"$addToSet": "$uid"},
+            "commentNum": {"$sum": "$commentOrNot"},
+            "commentUidList": {"$addToSet": {"$cond": [{"$eq": ["$commentOrNot", 1]}, "$uid", "$$REMOVE"]}},
+            "agreeNum": {"$sum": "$agreeOrNot"},
+            "agreeUidList": {"$addToSet": {"$cond": [{"$eq": ["$agreeOrNot", 1]}, "$uid", "$$REMOVE"]}},
+            "shareNum": {"$sum": "$shareOrNot"},
+            "shareUidList": {"$addToSet": {"$cond": [{"$eq": ["$shareOrNot", 1]}, "$uid", "$$REMOVE"]}}
+        }}
     ]
 
     beReadDB = db1.history.read.aggregate(pipeline)
