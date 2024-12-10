@@ -2,7 +2,7 @@ from flask import Flask, request, render_template
 import requests
 from pymongo import MongoClient
 import time
-import datetime
+from datetime import datetime, timezone
 
 
 clients = dict(
@@ -188,8 +188,7 @@ def article_list_page(pageid: int):
             article_list = list(res)
             for article in article_list:
                 article["cover"] = find_file_path(article["image"].split(",")[0])
-                article["timestamp"] = int(article["timestamp"])/1000
-                article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
+                article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"]) / 1000))
                 del article["_id"]
             break
         # except:
@@ -209,7 +208,7 @@ def get_search_user_results():
 @app.route("/frontend/search_user/<search_text>/<pageid>")
 def search_user_results(search_text: str, pageid: str):
     pageid = int(pageid)
-    fields = ["uid", "email", "phone"]  # 需要搜索的字段
+    fields = ["uid", "name", "email", "phone"]  # 需要搜索的字段
     query = {
         "$or": [
             {field: {"$regex": search_text, "$options": "i"}}
@@ -294,7 +293,7 @@ def search_article_results(search_text: str, pageid: str):
             article_list = list(res)
             for article in article_list:
                 article["cover"] = find_file_path(article["image"].split(",")[0])
-                article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
+                article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"]) / 1000))
                 del article["_id"]
             break
         # except:
@@ -320,11 +319,9 @@ def get_user(uid: str):
             # except:
             #     pass
         article["cover"] = find_file_path(article["image"].split(",")[0])
-        #article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
-        read["timestamp"] = int(read["timestamp"])/1000
-        read["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(read["timestamp"])))
-        #read["date"] = datetime.datetime.fromtimestamp(int(read["timestamp"]))
-        del article["_id"], article["id"], article["aid"], read["_id"], read["id"], read["timestamp"] #article["date"],
+        
+        read["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(read["timestamp"]) / 1000))
+        del article["_id"], article["id"], article["aid"], read["_id"], read["id"], read["timestamp"]
         tmp_list.append(dict(**article, **read))
     reading_list = tmp_list
     # print(reading_list)

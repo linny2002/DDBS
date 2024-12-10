@@ -14,12 +14,16 @@ mkdir -p ./ddbs/2
 docker-compose up -d
 echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
 
-# slice User, Article and Read Table
+# slice the User, Article and Read Table
 python3 slice_table.py
 echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
 
-# import all the tables into DB container
+# import the User, Article and Read Table into DB container
 python3 import_data_to_mongo.py  
+echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
+
+# create the Be-Read and Popular-Rank Table and import them into DB container
+python3 calcTables.py
 echo "Line $LINENO: $(date) - Command took $SECONDS seconds"; SECONDS=0
 
 # # upload all the texts, images and videos of every article to fastdfs

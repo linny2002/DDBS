@@ -68,5 +68,3 @@ if __name__ == "__main__":
                 assert(slic["uid"] in db1_user or slic["uid"] in db2_user)
     f1.close()
     f2.close()
-    
-    # TODO: create Be-Read and Popular-Rank jsonl file
