@@ -64,6 +64,19 @@
 
 		<section class="vds-main">
 			<div class="vidz-row">
+                <div class="container">
+					<h3>Search Popular Articles</h3>
+					<form id="searchPopular" onsubmit="redirectToPopular(event)">
+						<label for="granular">Select granularity:</label>
+					    <select name="granularity" id="granular" label>
+					        <option value="daily">Daily</option>
+					        <option value="weekly">Weekly</option>
+					        <option value="monthly">Monthly</option>
+					    </select> 
+					    Select date: <input type="date" id="date">
+						<button>Submit</button>
+					</form>
+				</div>
 				<div class="container">
 					<div class="vidz_sec">
 						<h3>All Articles</h3>
@@ -190,5 +203,16 @@
             alert("请输入搜索内容"); // 提示用户输入内容
         }
     }
+
+    function redirectToPopular(event) {
+        event.preventDefault();
+        const temp = document.getElementById("granular").value;
+		const date = document.getElementById("date").value;
+        const targetUrl = `/frontend/popular_rank/${temp}/${date}`;
+        
+		window.location.href = targetUrl;
+
+    }
+
 </script>
 </html>

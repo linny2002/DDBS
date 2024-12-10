@@ -2,6 +2,7 @@ from flask import Flask, request, render_template
 import requests
 from pymongo import MongoClient
 import time
+import datetime
 
 
 clients = dict(
@@ -72,14 +73,16 @@ def article_by_id(aid):
     for client in clients["db2"]:
         # try:
             article = client.info.article.find_one({"aid": aid})
+            beRead = client.history.be_read.find_one({"aid": aid})
             text_file = article["text"]
             text_path = find_file_path(text_file).strip()
             text = requests.get(text_path).text
             images = [find_file_path(i).strip() for i in article["image"].split(",") if i.strip()]
             videos = [find_file_path(i).strip() for i in article["video"].split(",") if i.strip()]
+            article["timestamp"] = int(article["timestamp"])/1000
             article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
-            del article["_id"], article["timestamp"], article["text"], article["image"], article["video"]
-            ret = dict(text=text, images=images, videos=videos, **article)
+            del article["_id"], article["timestamp"], article["text"], article["image"], article["video"], beRead["id"], beRead["aid"]
+            ret = dict(text=text, images=images, videos=videos, **article, **beRead)
             return ret
         # except:
         #     pass
@@ -93,7 +96,27 @@ def find_user_read_list(uid):
                 return history
         except:
             pass
-    return []
+    return []    
+
+def get_popular_by_granularity(granularity, date):
+    date = float(date)
+    if granularity=="daily":
+        for client in clients["db1"]:
+            try:
+                popular = client.history.popular_rank.find_one({"timestamp": date})
+                if popular:
+                    return popular
+            except:
+                pass
+    else:
+        for client in clients["db2"]:
+            try:
+                popular = client.history.popular_rank.find_one({"$and":[{"temporalGranularity": granularity},{"timestamp": date}]})
+                if popular:
+                    return popular
+            except:
+                pass
+    return {"message": f"Top5 for {date} not found. Articles are from around late September 2017 to mid January 2018."}
 
 
 @app.route("/frontend/user_list/", methods=["GET"])
@@ -165,6 +188,7 @@ def article_list_page(pageid: int):
             article_list = list(res)
             for article in article_list:
                 article["cover"] = find_file_path(article["image"].split(",")[0])
+                article["timestamp"] = int(article["timestamp"])/1000
                 article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
                 del article["_id"]
             break
@@ -296,10 +320,11 @@ def get_user(uid: str):
             # except:
             #     pass
         article["cover"] = find_file_path(article["image"].split(",")[0])
-        article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
-        
+        #article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
+        read["timestamp"] = int(read["timestamp"])/1000
         read["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(read["timestamp"])))
-        del article["_id"], article["date"], article["id"], article["aid"], read["_id"], read["id"], read["timestamp"]
+        #read["date"] = datetime.datetime.fromtimestamp(int(read["timestamp"]))
+        del article["_id"], article["id"], article["aid"], read["_id"], read["id"], read["timestamp"] #article["date"],
         tmp_list.append(dict(**article, **read))
     reading_list = tmp_list
     # print(reading_list)
@@ -307,11 +332,44 @@ def get_user(uid: str):
         reading_list[i]["url"] = f"/frontend/article/{reading_list[i]['aid']}"
     return render_template("user_info.html", user=user, reading_list=reading_list)
 
-
-@app.route("/frontend/popular_rank/<grainaty>/<rid>")
-def get_popular_rank_route(grainaty: str):
-    pass
+@app.route("/frontend/popular_rank/<grainaty>/<date>")
+def get_popular_rank(grainaty: str, date:str):
+    #transform date string into timestamp and adjust date according to granularity
+    if grainaty == "daily":
+        date = datetime.datetime.strptime(date, "%Y-%m-%d").timestamp()
+    elif grainaty == "monthly":
+        date = datetime.datetime.strptime(date, "%Y-%m-%d").replace(day=1).timestamp()
+        print(date)
+    else:
+        dt = datetime.datetime.strptime(date, "%Y-%m-%d")
+        weekstart = dt - datetime.timedelta(days=dt.weekday())
+        print(weekstart)
+        date = weekstart.timestamp()
+    popular = get_popular_by_granularity(grainaty, date)
+    popular = dict(popular)
+    print(popular)
+    if "message" in popular:
+         return render_template("popular_not_found.html", message=popular)
+    
+    if grainaty == "daily":
+         popular["date"] = time.strftime("%Y-%m-%d" , time.localtime(int(popular["timestamp"])))
+    elif grainaty == "monthly":
+         popular["date"] = time.strftime("%B %Y" , time.localtime(int(popular["timestamp"])))
+    else:
+         popular["date"] = "Week " + time.strftime("%W, %Y" , time.localtime(int(popular["timestamp"])))
+    tmp_list=[]
+    for popular_item in popular["articleAidList"]:
+        for client in clients["db2"]:
+            article = client.info.article.find_one({"aid": popular_item["aid"]})
+            break
+        article["cover"] = find_file_path(article["image"].split(",")[0])
+        del article["_id"], article["id"], article["aid"], article["timestamp"]
+        tmp_list.append(dict(**article, **popular_item))
+        print(tmp_list)
+    for i in range(5):
+        tmp_list[i]["url"] = f"/frontend/article/{tmp_list[i]['aid']}"
+    return render_template("popularRank.html", popular=popular, top5_list=tmp_list)
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    app.run(host="127.0.0.1", port=8080, debug=True)

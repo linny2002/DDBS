@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Top 5 articles</title>
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="" />
+<meta name="keywords" content="" />
+<link rel="icon" href="static/images/sv2.png">
+<link rel="stylesheet" type="text/css" href="static/css/animate.css">
+<link rel="stylesheet" type="text/css" href="static/css/bootstrap.min.css">
+<!-- <link rel="stylesheet" type="text/css" href="static/css/fontello.css"> -->
+<!-- <link rel="stylesheet" type="text/css" href="static/css/fontello-codes.css"> -->
+<!-- <link rel="stylesheet" type="text/css" href="static/css/thumbs-embedded.css"> -->
+<link rel="stylesheet" type="text/css" href="static/css/style.css">
+<link rel="stylesheet" type="text/css" href="static/css/responsive.css">
+<link rel="stylesheet" type="text/css" href="static/css/color.css">
+
+<!-- <link rel="stylesheet" type="text/css" href="static/css/animation.css"> -->
+<link rel="stylesheet" type="text/css" href="static/css/92204602.css">
+<link rel="stylesheet" type="text/css" href="static/css/92204602-ie7-codes.css">
+<link rel="stylesheet" type="text/css" href="static/css/92204602-ie7.css">
+<link rel="stylesheet" type="text/css" href="static/css/92204602-embedded.css">
+</head>
+<body>
+
+<div class="wrapper">
+
+
+	<header style="background-color:white; position: sticky; top: 0; z-index:100;">
+		<div class="top_bar">
+			<div class="container">
+				<div class="top_header_content">
+					<div class="menu_logo">
+                        <a href="frontend/article_list/1">
+                            <h3>HomePage</h3>
+                        </a>
+                    </div><!--menu_logo end-->
+					<div class="search_form">
+						<form action="http://localhost:8080/frontend/search_article/" method="get">
+							<input type="text" name="search_text" placeholder="Search articles" minlength="1" maxlength="50">
+							<button type="submit">
+								<i class="icon-search"></i>
+							</button>
+						</form>
+					</div><!--search_form end-->
+					<div class="clearfix"></div>
+				</div><!--top_header_content end-->
+			</div>
+		</div><!--header_content end-->
+	</header><!--header end-->
+
+
+	<section class="channel-cover">
+		<img src="images/resources/channel-banner.jpg" alt="">
+	</section><!--channel-cover end-->
+
+	<section class="videso_section">
+		<div class="tab-content p-0" id="myTabContent">
+		  	<div class="tab-pane fade show active" id="vvideo_tabz" role="tabpanel" aria-labelledby="videos_taab">
+				<div class="container">
+					<h3>Search Popular Articles</h3>
+					<form id="searchPopular" onsubmit="redirectToPopular(event)">
+						<label for="granular">Select granularity:</label>
+					    <select name="granularity" id="granular" label>
+					        <option value="daily">Daily</option>
+					        <option value="weekly">Weekly</option>
+					        <option value="monthly">Monthly</option>
+					    </select> 
+					    Select date: <input type="date" id="date">
+						<button>Submit</button>
+					</form>
+				</div>
+		  		<div class="videso_tb_details">
+		  			<div class="container">
+			  			<div class="vidz_sec">
+							<h3> Top 5 Articles from {{popular.date}}</h3>
+							<div class="clearfix"></div>
+							<div class="vidz_list">
+								<div class="column">
+                                    {% for article in top5_list %}
+									<div class="col-lg-4 col-md-3 col-sm-6 col-6 full_wdth">
+										<div class="videoo">
+											<div class="vid_thumbainl">
+												<a href="frontend/article/{{article.aid}}" title="" target="_blank">
+													<img src={{ article.cover }} alt="" style="aspect-ratio: 16/9; overflow: hidden;">
+												</a>	
+											</div><!--vid_thumbnail end-->
+											<div class="video_info">
+												<h3><a href="frontend/article/{{article.aid}}" title="" target="_blank">{{ article.title }}</a></h3>
+												<span>Abstract: {{ article.abstract }} &nbsp</span>
+											</div>
+										</div><!--videoo end-->
+									</div>
+                                    {% endfor %}
+								</div>
+							</div><!--vidz_list end-->
+						</div><!--vidz_videos end-->
+					</div>
+		  		</div><!--videso_tb_details end-->
+		  	</div>
+		</div>
+	</section><!--Featured Videos end-->
+
+	<section class="more_items_sec text-center">
+	</section><!--more_items_sec end-->
+
+
+</div><!--wrapper end-->
+
+
+
+<script src="static/js/jquery.min.js"></script>
+<!--<script src="static/js/popper.js"></script>
+<script src="static/js/bootstrap.min.js"></script>
+<script src="static/js/script.js"></script> -->
+
+<script>
+    function redirectToPopular(event) {
+        event.preventDefault();
+        const temp = document.getElementById("granular").value;
+		const date = document.getElementById("date").value;
+        const targetUrl = `/frontend/popular_rank/${temp}/${date}`;
+        
+		window.location.href = targetUrl;
+
+    }
+</script>
+
+</body>
+
+</html>
