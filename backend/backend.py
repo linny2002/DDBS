@@ -81,9 +81,21 @@ def article_by_id(aid):
             videos = [find_file_path(i).strip() for i in article["video"].split(",") if i.strip()]
             article["timestamp"] = int(article["timestamp"])/1000
             article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
-            del article["_id"], article["timestamp"], article["text"], article["image"], article["video"], beRead["id"], beRead["aid"]
-            ret = dict(text=text, images=images, videos=videos, **article, **beRead)
-            return ret
+ 
+    comments = []
+    for client in sum(list(clients.values()), []):
+        commentDetailList = client.history.read.find({"$and":[{"uid": {"$in": beRead["commentUidList"]}},{"aid": aid}]})
+        for comment in commentDetailList:
+            print(comment["commentDetail"])
+            comments.append(comment["commentDetail"])
+         
+    commentDetailList =dict(commentDetailList)
+    print(images)
+    print(comments)
+    #del commentDetailList["id"], commentDetailList["timestamp"], commentDetailList["readTimeLength"]
+    del article["_id"], article["timestamp"], article["text"], article["image"], article["video"], beRead["id"], beRead["aid"]
+    ret = dict(text=text, images=images, videos=videos, **article, **beRead, comments=comments)
+    return ret
         # except:
         #     pass
         
@@ -116,6 +128,7 @@ def get_popular_by_granularity(granularity, date):
                     return popular
             except:
                 pass
+    date = time.strftime("%Y-%m-%d" , time.localtime(date))
     return {"message": f"Top5 for {date} not found. Articles are from around late September 2017 to mid January 2018."}
 
 

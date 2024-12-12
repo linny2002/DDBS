@@ -91,10 +91,10 @@
 									<img src={{ image }} style="margin: 1% 0 1% 0;">
 								{% endfor %}
 								{% for video in videos  %}
-									<video width="640" height="360" controls>
-										<source src={{ video }} type="video/flv">
-										Your browser does not support the video tag.
-									</video>
+								    <video width="640" height="360" controls>
+									    <source src={{ video }} type="video/flv">
+									    Your browser does not support the video tag.
+								    </video>							   
 								{% endfor %}
 							</div><!--vid-pr end-->
 						</div><!--vid-1 end-->
@@ -106,22 +106,14 @@
 							<div class="clearfix"></div>
 							<div class="clearfix"></div>
 							<ul class="cmn-lst"> <!--comment list-->
-                                {% if reply1 %}
+                                {% for comment in comments %}
 								    <li>
                                         <div class="pinned-comment">
                                             <span><i class="icon-pinned"></i></span>
                                         </div>
-                                        <p>{{ reply1 }}</p>
+                                        <p>{{ comment }}</p>
 								    </li>
-                                {% endif %}
-                                {% if reply2 %}
-								    <li>
-                                        <div class="pinned-comment">
-                                            <span><i class="icon-pinned"></i></span>
-                                        </div>
-                                        <p>{{ reply2 }}</p>
-								    </li>
-                                {% endif %}
+                                {% endfor %}
 							</ul><!--comment list end-->
 						</div>
 					</div><!--mn-vid-sc end--->
