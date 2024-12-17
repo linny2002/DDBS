@@ -86,12 +86,12 @@ def article_by_id(aid):
     for client in sum(list(clients.values()), []):
         commentDetailList = client.history.read.find({"$and":[{"uid": {"$in": beRead["commentUidList"]}},{"aid": aid}]})
         for comment in commentDetailList:
-            print(comment["commentDetail"])
+            #print(comment["commentDetail"])
             comments.append(comment["commentDetail"])
          
     commentDetailList =dict(commentDetailList)
-    print(images)
-    print(comments)
+    #print(images)
+    #print(comments)
     #del commentDetailList["id"], commentDetailList["timestamp"], commentDetailList["readTimeLength"]
     del article["_id"], article["timestamp"], article["text"], article["image"], article["video"], beRead["id"], beRead["aid"]
     ret = dict(text=text, images=images, videos=videos, **article, **beRead, comments=comments)
@@ -349,33 +349,90 @@ def get_popular_rank(grainaty: str, date:str):
         date = datetime.strptime(date, "%Y-%m-%d").timestamp()
     elif grainaty == "monthly":
         date = datetime.strptime(date, "%Y-%m-%d").replace(day=1).timestamp()
-        print(date)
+        #print(date)
     else:
         dt = datetime.strptime(date, "%Y-%m-%d")
         weekstart = dt - timedelta(days=dt.weekday())
-        print(weekstart)
+        #print(weekstart)
         date = weekstart.timestamp()
     popular = get_popular_by_granularity(grainaty, date)
     popular = dict(popular)
-    print(popular)
+    #print(popular)
+    #date not found
     if "message" in popular:
          return render_template("popular_not_found.html", message=popular)
     
+    #transform date to fit with website
     if grainaty == "daily":
          popular["date"] = time.strftime("%Y-%m-%d" , time.localtime(int(popular["timestamp"])))
+         dt = datetime.strptime(popular["date"], "%Y-%m-%d")
     elif grainaty == "monthly":
          popular["date"] = time.strftime("%B %Y" , time.localtime(int(popular["timestamp"])))
+         dt = datetime.strptime(popular["date"], "%B %Y")
     else:
          popular["date"] = "Week " + time.strftime("%W, %Y" , time.localtime(int(popular["timestamp"])))
+         dt = popular["date"].split(",")
+         week_1 = dt[0].split()
+    # get top5 articles and their views that day/week/month
     tmp_list=[]
     for popular_item in popular["articleAidList"]:
         for client in clients["db2"]:
+            #print(popular_item["aid"])
             article = client.info.article.find_one({"aid": popular_item["aid"]})
+            #views = client.history.be_read.find_one({"aid": popular_item["aid"]})
+            if grainaty == "daily":
+                views = client.history.be_read.aggregate([
+                    {"$match": {"aid": popular_item["aid"]}}, #filter for this aid
+                    {"$unwind": "$timestamp"}, #transform timestamp to date
+                    {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}}}}},
+                    {"$project": {
+                        "year": {"$year": "$timestampDate"},
+                        "month": {"$month": "$timestampDate"},
+                        "day": {"$dayOfMonth": "$timestampDate"},
+                        "aid": "$aid",
+                    }},
+                    {"$match": {"$and" : [{"year": dt.year},{"month":dt.month}, {"day": dt.day}]}},
+                    {"$group": {"_id": {"aid": "$aid"},
+                        "readNum": {"$sum": 1},}},
+                ])
+                views = list(views)
+            elif grainaty == "monthly":
+                views = client.history.be_read.aggregate([
+                    {"$match": {"aid": popular_item["aid"]}}, #filter for this aid
+                    {"$unwind": "$timestamp"}, #transform timestamp to date
+                    {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}}}}},
+                    {"$project": {
+                        "year": {"$year": "$timestampDate"},
+                        "month": {"$month": "$timestampDate"},
+                        "aid": "$aid",
+                    }},
+                    {"$match": {"$and" : [{"year": dt.year},{"month":dt.month},]}},
+                    {"$group": {"_id": {"aid": "$aid"},
+                        "readNum": {"$sum": 1},}},
+                ])
+                views = list(views)
+            else:
+                views = client.history.be_read.aggregate([
+                    {"$match": {"aid": popular_item["aid"]}}, #filter for this aid
+                    {"$unwind": "$timestamp"}, #transform timestamp to date
+                    {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}}}}},
+                    {"$project": {
+                        "year": {"$isoWeekYear": "$timestampDate"}, # Extract year (ISO-8601 standard)
+                        "week": {"$isoWeek": "$timestampDate"},     # Extract week number
+                        "aid": "$aid",
+                    }},
+                    {"$match": {"$and" : [{"year": int(dt[1])},{"week":int(week_1[1])},]}},
+                    {"$group": {"_id": {"aid": "$aid"},
+                        "readNum": {"$sum": 1},}},
+                ])
+                views = list(views)
+            
             break
+        article["views"] = views[0]["readNum"]
         article["cover"] = find_file_path(article["image"].split(",")[0])
         del article["_id"], article["id"], article["aid"], article["timestamp"]
         tmp_list.append(dict(**article, **popular_item))
-        print(tmp_list)
+        #print(tmp_list)
     for i in range(5):
         tmp_list[i]["url"] = f"/frontend/article/{tmp_list[i]['aid']}"
     return render_template("popularRank.html", popular=popular, top5_list=tmp_list)
