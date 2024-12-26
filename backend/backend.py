@@ -1,35 +1,48 @@
 from flask import Flask, request, render_template
 import requests
 from pymongo import MongoClient
+from pymongo.errors import ServerSelectionTimeoutError
 import time
 from datetime import datetime, timezone, timedelta
 
 
 clients = dict(
     db1 = [
-        MongoClient(host="localhost", port=27001),
-        # MongoClient(host="ddbs1_bak", port=27003),
+        MongoClient(host="localhost", port=27001, serverSelectionTimeoutMS=300),
+        MongoClient(host="localhost", port=27003, serverSelectionTimeoutMS=300),
     ],
     db2 = [
-        MongoClient(host="localhost", port=27002),
-        # MongoClient(host="ddbs2_bak", port=27004),
+        MongoClient(host="localhost", port=27002, serverSelectionTimeoutMS=300),
+        MongoClient(host="localhost", port=27004, serverSelectionTimeoutMS=300),
     ]
     )
 app = Flask(__name__)
 ITEM_PER_PAGE = 40
+
+
+def get_active_client(client_list):
+    for client in client_list:
+        try:
+            # 尝试ping数据库以检查连接
+            client.admin.command("ping")
+            return client
+        except ServerSelectionTimeoutError:
+            continue
+    raise RuntimeError("No active database available")
+
 
 db1_user_count, db2_user_count = 0, 0
 for client in clients["db1"]:
     try:
         db1_user_count = client.info.user.count_documents({})
         break
-    except:
+    except ServerSelectionTimeoutError:
         pass
 for client in clients["db2"]:
     try:
         db2_user_count = client.info.user.count_documents({})
         break
-    except:
+    except ServerSelectionTimeoutError:
         pass
 user_list_page_num = (db1_user_count + db2_user_count) // ITEM_PER_PAGE
 if (db1_user_count + db2_user_count) % ITEM_PER_PAGE != 0:
@@ -40,7 +53,7 @@ for client in clients["db2"]:
     try:
         db2_article_count = client.info.article.count_documents({})
         break
-    except:
+    except ServerSelectionTimeoutError:
         pass
 article_list_page_num = db2_article_count // ITEM_PER_PAGE
 if db2_article_count % ITEM_PER_PAGE != 0:
@@ -50,28 +63,29 @@ if db2_article_count % ITEM_PER_PAGE != 0:
 # text, image and video files of an article is stored in the dfs
 def find_file_path(file_name):
     for client in sum(list(clients.values()), []):
-        # try:
+        try:
             res = client.mapping.article.find_one({"name": file_name})
             return res["path"]
-        # except:
-        #     pass
+        except ServerSelectionTimeoutError:
+            pass
     return None
 
 
 def user_by_id(uid):
     for client in sum(list(clients.values()), []):
+        print(client)
         try:
             user = client.info.user.find_one({"uid": uid})
             if user:
                 return user
-        except:
+        except ServerSelectionTimeoutError:
             pass
     return {"message": f"User {uid} not found."}
 
 
 def article_by_id(aid):
     for client in clients["db2"]:
-        # try:
+        try:
             article = client.info.article.find_one({"aid": aid})
             beRead = client.history.be_read.find_one({"aid": aid})
             text_file = article["text"]
@@ -81,13 +95,17 @@ def article_by_id(aid):
             videos = [find_file_path(i).strip() for i in article["video"].split(",") if i.strip()]
             article["timestamp"] = int(article["timestamp"])/1000
             article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"])))
- 
+        except ServerSelectionTimeoutError:
+            pass
     comments = []
     for client in sum(list(clients.values()), []):
-        commentDetailList = client.history.read.find({"$and":[{"uid": {"$in": beRead["commentUidList"]}},{"aid": aid}]})
-        for comment in commentDetailList:
-            #print(comment["commentDetail"])
-            comments.append(comment["commentDetail"])
+        try:
+            commentDetailList = client.history.read.find({"$and":[{"uid": {"$in": beRead["commentUidList"]}},{"aid": aid}]})
+            for comment in commentDetailList:
+                #print(comment["commentDetail"])
+                comments.append(comment["commentDetail"])
+        except ServerSelectionTimeoutError:
+            pass
          
     commentDetailList =dict(commentDetailList)
     #print(images)
@@ -96,8 +114,6 @@ def article_by_id(aid):
     del article["_id"], article["timestamp"], article["text"], article["image"], article["video"], beRead["id"], beRead["aid"]
     ret = dict(text=text, images=images, videos=videos, **article, **beRead, comments=comments)
     return ret
-        # except:
-        #     pass
         
 
 def find_user_read_list(uid):
@@ -106,7 +122,7 @@ def find_user_read_list(uid):
             history = list(client.history.read.find({"uid": uid}))
             if history:
                 return history
-        except:
+        except ServerSelectionTimeoutError:
             pass
     return []    
 
@@ -118,7 +134,7 @@ def get_popular_by_granularity(granularity, date):
                 popular = client.history.popular_rank.find_one({"timestamp": date})
                 if popular:
                     return popular
-            except:
+            except ServerSelectionTimeoutError:
                 pass
     else:
         for client in clients["db2"]:
@@ -126,7 +142,7 @@ def get_popular_by_granularity(granularity, date):
                 popular = client.history.popular_rank.find_one({"$and":[{"temporalGranularity": granularity},{"timestamp": date}]})
                 if popular:
                     return popular
-            except:
+            except ServerSelectionTimeoutError:
                 pass
     date = time.strftime("%Y-%m-%d" , time.localtime(date))
     return {"message": f"Top5 for {date} not found. Articles are from around late September 2017 to mid January 2018."}
@@ -148,38 +164,38 @@ def user_list_page(pageid: int):
     if ri <= db1_user_count:
         skipnum = le - 1
         for client in clients["db1"]:
-            # try:
+            try:
                 res = client.info.user.find().skip(skipnum).limit(ITEM_PER_PAGE)
                 user_list = list(res)
                 break
-            # except:
-            #     pass
+            except ServerSelectionTimeoutError:
+                pass
     elif le > db1_user_count:
         skipnum = le - 1 - db1_user_count
         for client in clients["db2"]:
-            # try:
+            try:
                 res = client.info.user.find().skip(skipnum).limit(ITEM_PER_PAGE)
                 user_list = list(res)
                 break
-            # except:
-            #     pass
+            except ServerSelectionTimeoutError:
+                pass
     else:  # le <= db1_user_count < ri
         skipnum = le - 1
         user_list = []
         for client in clients["db1"]:
-            # try:
+            try:
                 res = client.info.user.find().skip(skipnum)
                 user_list = list(res)
                 break
-            # except:
-            #     pass
+            except ServerSelectionTimeoutError:
+                pass
         for client in clients["db2"]:
-            # try:
+            try:
                 res = client.info.user.find().limit(ri - db1_user_count)
                 user_list.extend(list(res))
                 break
-            # except:
-            #     pass
+            except ServerSelectionTimeoutError:
+                pass
     return render_template("user_list.html", pageid=pageid, user_list=user_list, item_per_page=ITEM_PER_PAGE, total_page_num=user_list_page_num)
 
 
@@ -196,7 +212,7 @@ def article_list_page(pageid: int):
         pageid = 1
         
     for client in clients["db2"]:
-        # try:  # in case one of the db brokedown
+        try:  # in case one of the db brokedown
             res = client.info.article.find().skip((pageid - 1) * ITEM_PER_PAGE).limit(ITEM_PER_PAGE)
             article_list = list(res)
             for article in article_list:
@@ -204,8 +220,8 @@ def article_list_page(pageid: int):
                 article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"]) / 1000))
                 del article["_id"]
             break
-        # except:
-        #     pass
+        except ServerSelectionTimeoutError:
+            pass
     return render_template("article_list.html", pageid=pageid, article_list=article_list, item_per_page=ITEM_PER_PAGE, total_page_num=article_list_page_num)
 
 
@@ -235,45 +251,47 @@ def search_user_results(search_text: str, pageid: str):
     user_list = []
     for client_name in ["db1", "db2"]:
         for client in clients[client_name]:
-            # try:
+            try:
                 searched_user_num[client_name] = client.info.user.count_documents(query)
                 break
+            except ServerSelectionTimeoutError:
+                pass
     le, ri = (pageid - 1) * ITEM_PER_PAGE + 1, pageid * ITEM_PER_PAGE
     if ri <= searched_user_num["db1"]:
         skipnum = le - 1
         for client in clients["db1"]:
-            # try:
+            try:
                 res = client.info.user.find(query).skip(skipnum).limit(ITEM_PER_PAGE)
                 user_list = list(res)
                 break
-            # except:
-            #     pass
+            except ServerSelectionTimeoutError:
+                pass
     elif le > searched_user_num["db1"]:
         skipnum = le - 1 - searched_user_num["db1"]
         for client in clients["db2"]:
-            # try:
+            try:
                 res = client.info.user.find(query).skip(skipnum).limit(ITEM_PER_PAGE)
                 user_list = list(res)
                 break
-            # except:
-            #     pass
+            except ServerSelectionTimeoutError:
+                pass
     else:  # le <= db1_user_count < ri
         skipnum = le - 1
         user_list = []
         for client in clients["db1"]:
-            # try:
+            try:
                 res = client.info.user.find(query).skip(skipnum)
                 user_list = list(res)
                 break
-            # except:
-            #     pass
+            except ServerSelectionTimeoutError:
+                pass
         for client in clients["db2"]:
-            # try:
+            try:
                 res = client.info.user.find(query).limit(ri - searched_user_num["db1"])
                 user_list.extend(list(res))
                 break
-            # except:
-            #     pass
+            except ServerSelectionTimeoutError:
+                pass
     total_user_num = searched_user_num["db1"] + searched_user_num["db2"]
     total_page_num = total_user_num // ITEM_PER_PAGE + 1
     return render_template("search_user_results.html", pageid=pageid, user_list=user_list, item_per_page=ITEM_PER_PAGE, total_page_num=total_page_num, last_search_text=search_text, total_user_num=total_user_num)
@@ -299,7 +317,7 @@ def search_article_results(search_text: str, pageid: str):
         ]
     }
     for client in clients["db2"]:
-        # try:  # in case one of the db brokedown
+        try:  # in case one of the db brokedown
             total_article_num = client.info.article.count_documents(query)
             total_page_num = total_article_num // ITEM_PER_PAGE + 1
             res = client.info.article.find(query).skip((pageid - 1) * ITEM_PER_PAGE).limit(ITEM_PER_PAGE)
@@ -309,8 +327,8 @@ def search_article_results(search_text: str, pageid: str):
                 article["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(article["timestamp"]) / 1000))
                 del article["_id"]
             break
-        # except:
-        #     pass
+        except ServerSelectionTimeoutError:
+            pass
     return render_template("search_article_results.html", pageid=pageid, article_list=article_list, item_per_page=ITEM_PER_PAGE, total_page_num=total_page_num, last_search_text=search_text, total_article_num=total_article_num)
 
 
@@ -322,20 +340,22 @@ def get_article(aid: str):
 @app.route("/frontend/user/<uid>")
 def get_user(uid: str):
     user = user_by_id(uid)
+    print("find user!!!!!!!!!!!!!!!")
     reading_list = find_user_read_list(uid)
     tmp_list = []
     for read in reading_list:
         for client in clients["db2"]:
-            # try:
+            try:
                 article = client.info.article.find_one({"aid": read["aid"]})
                 break
-            # except:
-            #     pass
+            except ServerSelectionTimeoutError:
+                continue
         article["cover"] = find_file_path(article["image"].split(",")[0])
-        
+
         read["date"] = time.strftime("%Y-%m-%d %H:%M", time.localtime(int(read["timestamp"]) / 1000))
         del article["_id"], article["id"], article["aid"], read["_id"], read["id"], read["timestamp"]
         tmp_list.append(dict(**article, **read))
+    print("tmp_list done!!!!!!!!!")
     reading_list = tmp_list
     # print(reading_list)
     for i in range(len(reading_list)):
@@ -377,57 +397,60 @@ def get_popular_rank(grainaty: str, date:str):
     tmp_list=[]
     for popular_item in popular["articleAidList"]:
         for client in clients["db2"]:
-            #print(popular_item["aid"])
-            article = client.info.article.find_one({"aid": popular_item["aid"]})
-            #views = client.history.be_read.find_one({"aid": popular_item["aid"]})
-            if grainaty == "daily":
-                views = client.history.be_read.aggregate([
-                    {"$match": {"aid": popular_item["aid"]}}, #filter for this aid
-                    {"$unwind": "$timestamp"}, #transform timestamp to date
-                    {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}}}}},
-                    {"$project": {
-                        "year": {"$year": "$timestampDate"},
-                        "month": {"$month": "$timestampDate"},
-                        "day": {"$dayOfMonth": "$timestampDate"},
-                        "aid": "$aid",
-                    }},
-                    {"$match": {"$and" : [{"year": dt.year},{"month":dt.month}, {"day": dt.day}]}},
-                    {"$group": {"_id": {"aid": "$aid"},
-                        "readNum": {"$sum": 1},}},
-                ])
-                views = list(views)
-            elif grainaty == "monthly":
-                views = client.history.be_read.aggregate([
-                    {"$match": {"aid": popular_item["aid"]}}, #filter for this aid
-                    {"$unwind": "$timestamp"}, #transform timestamp to date
-                    {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}}}}},
-                    {"$project": {
-                        "year": {"$year": "$timestampDate"},
-                        "month": {"$month": "$timestampDate"},
-                        "aid": "$aid",
-                    }},
-                    {"$match": {"$and" : [{"year": dt.year},{"month":dt.month},]}},
-                    {"$group": {"_id": {"aid": "$aid"},
-                        "readNum": {"$sum": 1},}},
-                ])
-                views = list(views)
-            else:
-                views = client.history.be_read.aggregate([
-                    {"$match": {"aid": popular_item["aid"]}}, #filter for this aid
-                    {"$unwind": "$timestamp"}, #transform timestamp to date
-                    {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}}}}},
-                    {"$project": {
-                        "year": {"$isoWeekYear": "$timestampDate"}, # Extract year (ISO-8601 standard)
-                        "week": {"$isoWeek": "$timestampDate"},     # Extract week number
-                        "aid": "$aid",
-                    }},
-                    {"$match": {"$and" : [{"year": int(dt[1])},{"week":int(week_1[1])},]}},
-                    {"$group": {"_id": {"aid": "$aid"},
-                        "readNum": {"$sum": 1},}},
-                ])
-                views = list(views)
-            
-            break
+            try:
+                #print(popular_item["aid"])
+                article = client.info.article.find_one({"aid": popular_item["aid"]})
+                #views = client.history.be_read.find_one({"aid": popular_item["aid"]})
+                if grainaty == "daily":
+                    views = client.history.be_read.aggregate([
+                        {"$match": {"aid": popular_item["aid"]}}, #filter for this aid
+                        {"$unwind": "$timestamp"}, #transform timestamp to date
+                        {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}}}}},
+                        {"$project": {
+                            "year": {"$year": "$timestampDate"},
+                            "month": {"$month": "$timestampDate"},
+                            "day": {"$dayOfMonth": "$timestampDate"},
+                            "aid": "$aid",
+                        }},
+                        {"$match": {"$and" : [{"year": dt.year},{"month":dt.month}, {"day": dt.day}]}},
+                        {"$group": {"_id": {"aid": "$aid"},
+                            "readNum": {"$sum": 1},}},
+                    ])
+                    views = list(views)
+                elif grainaty == "monthly":
+                    views = client.history.be_read.aggregate([
+                        {"$match": {"aid": popular_item["aid"]}}, #filter for this aid
+                        {"$unwind": "$timestamp"}, #transform timestamp to date
+                        {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}}}}},
+                        {"$project": {
+                            "year": {"$year": "$timestampDate"},
+                            "month": {"$month": "$timestampDate"},
+                            "aid": "$aid",
+                        }},
+                        {"$match": {"$and" : [{"year": dt.year},{"month":dt.month},]}},
+                        {"$group": {"_id": {"aid": "$aid"},
+                            "readNum": {"$sum": 1},}},
+                    ])
+                    views = list(views)
+                else:
+                    views = client.history.be_read.aggregate([
+                        {"$match": {"aid": popular_item["aid"]}}, #filter for this aid
+                        {"$unwind": "$timestamp"}, #transform timestamp to date
+                        {"$addFields": {"timestampDate": {"$toDate": {"$convert": {"to": "double", "input": "$timestamp"}}}}},
+                        {"$project": {
+                            "year": {"$isoWeekYear": "$timestampDate"}, # Extract year (ISO-8601 standard)
+                            "week": {"$isoWeek": "$timestampDate"},     # Extract week number
+                            "aid": "$aid",
+                        }},
+                        {"$match": {"$and" : [{"year": int(dt[1])},{"week":int(week_1[1])},]}},
+                        {"$group": {"_id": {"aid": "$aid"},
+                            "readNum": {"$sum": 1},}},
+                    ])
+                    views = list(views)
+                
+                break
+            except ServerSelectionTimeoutError:
+                pass
         article["views"] = views[0]["readNum"]
         article["cover"] = find_file_path(article["image"].split(",")[0])
         del article["_id"], article["id"], article["aid"], article["timestamp"]

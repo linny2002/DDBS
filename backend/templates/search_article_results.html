@@ -83,7 +83,7 @@
 										</div><!--vid_thumbnail end-->
 										<div class="video_info">
 											<h3><a href="frontend/article/{{article.uid}}" title="" target="_blank">{{ article.title }}</a></h3>
-											<span>{{ article.views }} views </span><br>
+											<!-- <span>{{ article.views }} views </span><br> -->
                                             <span class="posted_dt">{{ article.date }}</span>
 										</div>
 									</div><!--videoo end-->
@@ -185,7 +185,7 @@
         if (searchText) {
             // 构建目标 URL，默认页面 ID 为 1
             const pageid = 1; // 可以根据需求设置初始页面 ID
-            const targetUrl = `/frontend/search_article/${last_search_text}/${pageid}`;
+            const targetUrl = `/frontend/search_article/${searchText}/${pageid}`;
     
             // 重定向到生成的 URL
             window.location.href = targetUrl;

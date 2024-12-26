@@ -24,25 +24,25 @@ services:
     ports:
       - "27002:27017"
 
-  # ddbs1_bak:
-  #   image: mongo:4.4.4
-  #   container_name: ddbs1_bak
-  #   volumes:
-  #     - ${PWD}/ddbs/1:/data_load
-  #   networks:
-  #     - ddbs_network
-  #   ports:
-  #     - "27003:27017"
+  ddbs1_bak:
+    image: mongo:4.4.4
+    container_name: ddbs1_bak
+    volumes:
+      - ${PWD}/ddbs/1:/data_load
+    networks:
+      - ddbs_network
+    ports:
+      - "27003:27017"
 
-  # ddbs2_bak:
-  #   image: mongo:4.4.4
-  #   container_name: ddbs2_bak
-  #   volumes:
-  #     - ${PWD}/ddbs/2:/data_load
-  #   networks:
-  #     - ddbs_network
-  #   ports:
-  #     - "27004:27017"
+  ddbs2_bak:
+    image: mongo:4.4.4
+    container_name: ddbs2_bak
+    volumes:
+      - ${PWD}/ddbs/2:/data_load
+    networks:
+      - ddbs_network
+    ports:
+      - "27004:27017"
 
   tracker:
     image: delron/fastdfs
