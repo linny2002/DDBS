@@ -2,7 +2,7 @@
 
 ## 1 Initial Setup
 
-First, clone the repository at (insert link).  
+First, clone the repository from [Github](https://github.com/linny2002/DDBS).  
 Then, extract the data generation files into the db-generation directory and run `python3 genTable_mongoDB10G.py`. The resulting file tree should look similar like this:  
 
 ```
