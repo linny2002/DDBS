@@ -27,6 +27,22 @@ def get_container_names(prefix):
 
 
 def import_data_to_mongo(container_name, db, collection, file_path):
+    # clear target collection
+    subprocess.run([
+        "docker", "exec", "-it", container_name,
+        "mongo", db,
+        "--eval", f'db.{collection}.deleteMany({{}})'
+    ], check=True)
+
+    # import data
     subprocess.run(["docker", "exec", "-it", container_name, 
                     "mongoimport", f"--db={db}", f"--collection={collection}", file_path])
         
+        
+def upsert_data(collection, data, key="id"):
+    for item in data:
+        collection.update_one(
+            {key: item[key]},
+            {"$set": item},
+            upsert=True
+        )

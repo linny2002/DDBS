@@ -1,19 +1,19 @@
 # insert the fragmented User, Article and Read tables into mongo databases
-from utils import get_container_names, load_jsonl, import_data_to_mongo
+from utils import get_container_names, load_jsonl, import_data_to_mongo, upsert_data
 from pymongo import MongoClient
 from tqdm import tqdm
 
 
-# clients = dict(
-#     db1 = [
-#         MongoClient(host="localhost", port=27001),
-#         # MongoClient(host="ddbs1_bak", port=27003),
-#     ],
-#     db2 = [
-#         MongoClient(host="localhost", port=27002),
-#         # MongoClient(host="ddbs2_bak", port=27004),
-#     ]
-#     )
+clients = dict(
+    db1 = [
+        MongoClient(host="localhost", port=27001),
+        MongoClient(host="localhost", port=27003),
+    ],
+    db2 = [
+        MongoClient(host="localhost", port=27002),
+        MongoClient(host="localhost", port=27004),
+    ]
+)
 
 
 if __name__ == "__main__":
@@ -29,6 +29,10 @@ if __name__ == "__main__":
     # # import data by pymongo
     # for id in [1, 2]:
     #     for client in tqdm(clients[f"db{id}"]):
-    #         client.info.user.insert_many(load_jsonl(f"ddbs/{id}/user.jsonl"))
-    #         client.info.article.insert_many(load_jsonl(f"ddbs/{id}/article.jsonl"))
-    #         client.info.read.insert_many(load_jsonl(f"ddbs/{id}/read.jsonl"))
+    #         # client.info.user.insert_many(load_jsonl(f"ddbs/{id}/user.jsonl"))
+    #         # client.info.article.insert_many(load_jsonl(f"ddbs/{id}/article.jsonl"))
+    #         # client.info.read.insert_many(load_jsonl(f"ddbs/{id}/read.jsonl"))
+            
+    #         upsert_data(client.info.user, load_jsonl(f"ddbs/{id}/user.jsonl"))
+    #         upsert_data(client.info.article, load_jsonl(f"ddbs/{id}/article.jsonl"))
+    #         upsert_data(client.history.read, load_jsonl(f"ddbs/{id}/read.jsonl"))

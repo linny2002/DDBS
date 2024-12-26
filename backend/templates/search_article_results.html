@@ -185,7 +185,7 @@
         if (searchText) {
             // 构建目标 URL，默认页面 ID 为 1
             const pageid = 1; // 可以根据需求设置初始页面 ID
-            const targetUrl = `/frontend/search_article/${last_search_text}/${pageid}`;
+            const targetUrl = `/frontend/search_article/${searchText}/${pageid}`;
     
             // 重定向到生成的 URL
             window.location.href = targetUrl;
